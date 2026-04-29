@@ -192,6 +192,22 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 <div id="tab-seq" class="tab-content">
   <div class="filters-bar">
     <div class="fg">
+      <label>Country / Territory</label>
+      <select id="seq-country" onchange="renderSequential()">
+        <option value="all">All Countries</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>Traffic Source</label>
+      <select id="seq-source" onchange="renderSequential()">
+        <option value="all">All Sources</option>
+        <option value="search">App Store Search</option>
+        <option value="browse">App Store Browse</option>
+        <option value="appref">App Referrer</option>
+        <option value="webref">Web Referrer</option>
+      </select>
+    </div>
+    <div class="fg">
       <label>Update Live Date</label>
       <input type="date" id="seq-live" class="fg-date" onchange="renderSequential()">
     </div>
@@ -944,6 +960,15 @@ function kwSort(col) {
 }
 
 // ── Sequential Analysis ───────────────────────────────────────────────────────
+function initSeqFilters() {
+  var sel = document.getElementById('seq-country');
+  sel.innerHTML = '<option value="all">All Countries</option>';
+  Object.keys(_mem).sort().forEach(function(t) {
+    if (!Object.keys(_mem[t]).length) return;
+    sel.innerHTML += '<option value="'+esc(t)+'">'+esc(t)+'</option>';
+  });
+}
+
 var seqDlMetric = 'total';
 
 function setSeqDl(m) {
@@ -961,6 +986,8 @@ function seqFmtN(v) {
 }
 
 function renderSequential() {
+  var territory = document.getElementById('seq-country').value;
+  var source    = document.getElementById('seq-source').value;
   var liveDate  = document.getElementById('seq-live').value;
   var baseStart = document.getElementById('seq-base-s').value;
   var baseEnd   = document.getElementById('seq-base-e').value;
@@ -978,8 +1005,8 @@ function renderSequential() {
   var rangeStart = baseStart < infStart ? baseStart : infStart;
   var rangeEnd   = baseEnd   > infEnd   ? baseEnd   : infEnd;
 
-  // Reuse getDailyTotals — all countries, all sources
-  var daily = getDailyTotals(_mem, 'all', 'all', rangeStart, rangeEnd);
+  // Reuse getDailyTotals with the selected territory and source filters
+  var daily = getDailyTotals(_mem, territory, source, rangeStart, rangeEnd);
   var dates = Object.keys(daily).sort();
   dates.forEach(function(d){ daily[d].cvr = daily[d].imp > 0 ? daily[d].total/daily[d].imp*100 : 0; });
 
@@ -1130,6 +1157,7 @@ function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) 
   refreshHeader(_mem);
   renderTable();
   initKwCountryFilter();
+  initSeqFilters();
   document.getElementById('kw-wrap').addEventListener('click', function(e) {
     if (!e.target.classList.contains('kw-star')) return;
     toggleStar(e.target.getAttribute('data-country'), e.target.getAttribute('data-kw'));
