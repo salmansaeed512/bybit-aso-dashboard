@@ -66,6 +66,12 @@ th.sortable{cursor:pointer;user-select:none}.th.sortable:hover{background:#2d374
 th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity:.6}
 .kw-star{cursor:pointer;font-size:15px;color:#cbd5e1;line-height:1;transition:color .15s;user-select:none}
 .kw-star.starred{color:#F7A600}
+.fg-date{padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:#fff;color:#1a1a2e;cursor:pointer}
+.seq-range{display:flex;align-items:center;gap:6px}
+.seq-range-sep{font-size:12px;color:#94a3b8;white-space:nowrap}
+.seq-wrap{margin:0 24px 24px;display:flex;flex-direction:column;gap:16px}
+.seq-card{background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}
+.seq-card-hdr{padding:14px 18px 12px;font-size:14px;font-weight:700;color:#1a1a2e;border-bottom:1px solid #f1f5f9}
 </style>
 </head>
 <body>
@@ -83,6 +89,7 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 <div class="tab-nav">
   <button class="tab-btn active" id="tabn-traffic"  onclick="setTab('traffic')">Traffic Analysis</button>
   <button class="tab-btn"        id="tabn-keywords" onclick="setTab('keywords')">Keyword Rank Tracking</button>
+  <button class="tab-btn"        id="tabn-seq"      onclick="setTab('seq')">Sequential Analysis</button>
 </div>
 
 <div id="tab-traffic" class="tab-content active">
@@ -182,6 +189,50 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 </div>
 
 
+<div id="tab-seq" class="tab-content">
+  <div class="filters-bar">
+    <div class="fg">
+      <label>Update Live Date</label>
+      <input type="date" id="seq-live" class="fg-date" onchange="renderSequential()">
+    </div>
+    <div class="fg">
+      <label>Baseline Period</label>
+      <div class="seq-range">
+        <input type="date" id="seq-base-s" class="fg-date" onchange="renderSequential()">
+        <span class="seq-range-sep">to</span>
+        <input type="date" id="seq-base-e" class="fg-date" onchange="renderSequential()">
+      </div>
+    </div>
+    <div class="fg">
+      <label>Influence Period</label>
+      <div class="seq-range">
+        <input type="date" id="seq-inf-s" class="fg-date" onchange="renderSequential()">
+        <span class="seq-range-sep">to</span>
+        <input type="date" id="seq-inf-e" class="fg-date" onchange="renderSequential()">
+      </div>
+    </div>
+    <div class="fg">
+      <label>Download Metric</label>
+      <div class="mtoggle">
+        <button id="seq-dl-total" class="active" onclick="setSeqDl('total')">Total Downloads</button>
+        <button id="seq-dl-ftd"                  onclick="setSeqDl('ftd')">First Time Downloads</button>
+        <button id="seq-dl-rdl"                  onclick="setSeqDl('rdl')">Redownloads</button>
+      </div>
+    </div>
+  </div>
+  <div class="seq-wrap">
+    <div class="seq-card">
+      <div class="seq-card-hdr">Pre / Post Performance</div>
+      <div id="seq-chart" style="padding:8px 16px 16px">
+        <div class="empty"><h3>Select all date ranges to view analysis.</h3></div>
+      </div>
+    </div>
+    <div class="seq-card">
+      <div id="seq-table"></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -226,7 +277,7 @@ function toggleMetric(key) {
 }
 
 function setTab(tab) {
-  ['traffic','keywords'].forEach(function(t){
+  ['traffic','keywords','seq'].forEach(function(t){
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
     document.getElementById('tabn-'+t).classList.toggle('active', t===tab);
   });
@@ -890,6 +941,188 @@ function kwSort(col) {
   if (kwSortCol === col) kwSortAsc = !kwSortAsc;
   else { kwSortCol = col; kwSortAsc = (col === 'rank'); }
   renderKeywords();
+}
+
+// ── Sequential Analysis ───────────────────────────────────────────────────────
+var seqDlMetric = 'total';
+
+function setSeqDl(m) {
+  seqDlMetric = m;
+  ['total','ftd','rdl'].forEach(function(x){
+    document.getElementById('seq-dl-'+x).classList.toggle('active', x===m);
+  });
+  renderSequential();
+}
+
+function seqFmtN(v) {
+  if (v >= 1000000) return (v/1000000).toFixed(1)+'M';
+  if (v >= 1000)    return Math.round(v/1000)+'K';
+  return Math.round(v)+'';
+}
+
+function renderSequential() {
+  var liveDate  = document.getElementById('seq-live').value;
+  var baseStart = document.getElementById('seq-base-s').value;
+  var baseEnd   = document.getElementById('seq-base-e').value;
+  var infStart  = document.getElementById('seq-inf-s').value;
+  var infEnd    = document.getElementById('seq-inf-e').value;
+  var chartEl   = document.getElementById('seq-chart');
+  var tableEl   = document.getElementById('seq-table');
+
+  if (!liveDate || !baseStart || !baseEnd || !infStart || !infEnd) {
+    chartEl.innerHTML = '<div class="empty"><h3>Select all date ranges to view analysis.</h3></div>';
+    tableEl.innerHTML = '';
+    return;
+  }
+
+  var rangeStart = baseStart < infStart ? baseStart : infStart;
+  var rangeEnd   = baseEnd   > infEnd   ? baseEnd   : infEnd;
+
+  // Reuse getDailyTotals — all countries, all sources
+  var daily = getDailyTotals(_mem, 'all', 'all', rangeStart, rangeEnd);
+  var dates = Object.keys(daily).sort();
+  dates.forEach(function(d){ daily[d].cvr = daily[d].imp > 0 ? daily[d].total/daily[d].imp*100 : 0; });
+
+  if (!dates.length) {
+    chartEl.innerHTML = '<div class="empty"><h3>No data found for the selected date range.</h3></div>';
+    tableEl.innerHTML = '';
+    return;
+  }
+
+  seqRenderChart(chartEl, dates, daily, liveDate);
+  seqRenderTable(tableEl, dates, daily, baseStart, baseEnd, infStart, infEnd);
+}
+
+function seqRenderChart(el, dates, daily, liveDate) {
+  var dlKey   = seqDlMetric==='ftd' ? 'ftd' : seqDlMetric==='rdl' ? 'rdl' : 'total';
+  var dlLabel = seqDlMetric==='ftd' ? 'First Time Downloads' : seqDlMetric==='rdl' ? 'Redownloads' : 'Total Downloads';
+  var n = dates.length;
+  var W=920, H=340, pL=64, pR=52, pT=36, pB=48;
+  var cW=W-pL-pR, cH=H-pT-pB;
+
+  var maxL=0, maxR=0;
+  dates.forEach(function(d){
+    maxL = Math.max(maxL, daily[d].imp, daily[d][dlKey]);
+    maxR = Math.max(maxR, daily[d].cvr);
+  });
+  maxL = (maxL||1)*1.15; maxR = (maxR||1)*1.25;
+
+  var gw = cW/n;
+  var bw = Math.min(Math.max(gw*0.36, 1.5), 16);
+  var gap = Math.max(gw*0.04, 0.5);
+
+  function xc(i){ return pL + (i+0.5)*gw; }
+  function yL(v){ return pT + cH - (v/maxL)*cH; }
+  function yR(v){ return pT + cH - (v/maxR)*cH; }
+
+  var s = [];
+
+  // Grid + left ticks
+  for (var ti=0; ti<=5; ti++) {
+    var gy = pT + cH/5*ti;
+    s.push('<line x1="'+pL+'" x2="'+(W-pR)+'" y1="'+gy+'" y2="'+gy+'" stroke="#f1f5f9" stroke-width="1"/>');
+    s.push('<text x="'+(pL-5)+'" y="'+(gy+4)+'" text-anchor="end" font-size="10" fill="#94a3b8">'+seqFmtN(maxL*(1-ti/5))+'</text>');
+    s.push('<text x="'+(W-pR+5)+'" y="'+(gy+4)+'" text-anchor="start" font-size="10" fill="#ef4444">'+(maxR*(1-ti/5)).toFixed(1)+'%</text>');
+  }
+
+  // Grouped columns — impressions (grey, left bar) + download metric (orange, right bar)
+  dates.forEach(function(d,i){
+    var x=xc(i);
+    var ih=(daily[d].imp/maxL)*cH, dh=(daily[d][dlKey]/maxL)*cH;
+    var ix=x-gap/2-bw, dx=x+gap/2;
+    s.push('<rect x="'+ix+'" y="'+(pT+cH-ih)+'" width="'+bw+'" height="'+(ih<0?0:ih)+'" fill="#cbd5e1"/>');
+    s.push('<rect x="'+dx+'" y="'+(pT+cH-dh)+'" width="'+bw+'" height="'+(dh<0?0:dh)+'" fill="#F7A600" opacity="0.9"/>');
+  });
+
+  // CVR line (drawn after bars so it sits on top)
+  var pts = dates.map(function(d,i){ return xc(i)+','+yR(daily[d].cvr); }).join(' ');
+  s.push('<polyline points="'+pts+'" fill="none" stroke="#ef4444" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>');
+
+  // Live date vertical dotted line — on top of everything
+  if (liveDate) {
+    var t0 = new Date(dates[0]).getTime();
+    var tn = new Date(dates[dates.length-1]).getTime();
+    var tl = new Date(liveDate).getTime();
+    if (tl >= t0 && tl <= tn) {
+      var lx = tn>t0 ? pL + ((tl-t0)/(tn-t0))*cW : pL+cW/2;
+      s.push('<line x1="'+lx+'" x2="'+lx+'" y1="'+pT+'" y2="'+(pT+cH)+'" stroke="#1a1a2e" stroke-width="1.5" stroke-dasharray="5,3"/>');
+      s.push('<text x="'+lx+'" y="'+(pT-6)+'" text-anchor="middle" font-size="10" font-weight="700" fill="#1a1a2e">Update Live</text>');
+    }
+  }
+
+  // Axes
+  s.push('<line x1="'+pL+'" x2="'+pL+'" y1="'+pT+'" y2="'+(pT+cH)+'" stroke="#e2e8f0" stroke-width="1"/>');
+  s.push('<line x1="'+(W-pR)+'" x2="'+(W-pR)+'" y1="'+pT+'" y2="'+(pT+cH)+'" stroke="#fca5a5" stroke-width="1"/>');
+  s.push('<line x1="'+pL+'" x2="'+(W-pR)+'" y1="'+(pT+cH)+'" y2="'+(pT+cH)+'" stroke="#e2e8f0" stroke-width="1"/>');
+
+  // X-axis date labels
+  var every = Math.ceil(n/14);
+  dates.forEach(function(d,i){
+    if (i%every===0 || i===n-1) {
+      var x=xc(i);
+      s.push('<text x="'+x+'" y="'+(pT+cH+12)+'" text-anchor="end" font-size="9" fill="#94a3b8" transform="rotate(-38 '+x+' '+(pT+cH+12)+')">'+d.slice(5)+'</text>');
+    }
+  });
+
+  // Legend
+  var ly=12;
+  s.push('<rect x="'+pL+'" y="'+ly+'" width="10" height="10" fill="#cbd5e1"/>');
+  s.push('<text x="'+(pL+14)+'" y="'+(ly+9)+'" font-size="11" fill="#64748b">Impressions</text>');
+  s.push('<rect x="'+(pL+98)+'" y="'+ly+'" width="10" height="10" fill="#F7A600"/>');
+  s.push('<text x="'+(pL+112)+'" y="'+(ly+9)+'" font-size="11" fill="#64748b">'+dlLabel+'</text>');
+  s.push('<line x1="'+(pL+264)+'" x2="'+(pL+280)+'" y1="'+(ly+5)+'" y2="'+(ly+5)+'" stroke="#ef4444" stroke-width="2"/>');
+  s.push('<text x="'+(pL+284)+'" y="'+(ly+9)+'" font-size="11" fill="#64748b">CVR %</text>');
+
+  // Axis unit labels
+  s.push('<text x="10" y="'+(pT+cH/2)+'" text-anchor="middle" font-size="9" fill="#94a3b8" transform="rotate(-90 10 '+(pT+cH/2)+')">Count</text>');
+  s.push('<text x="'+(W-8)+'" y="'+(pT+cH/2)+'" text-anchor="middle" font-size="9" fill="#ef4444" transform="rotate(90 '+(W-8)+' '+(pT+cH/2)+')">CVR %</text>');
+
+  el.innerHTML = '<div style="overflow-x:auto"><svg width="100%" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'+s.join('')+'</svg></div>';
+}
+
+function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) {
+  var dlKey   = seqDlMetric==='ftd' ? 'ftd' : seqDlMetric==='rdl' ? 'rdl' : 'total';
+  var dlLabel = seqDlMetric==='ftd' ? 'First Time Downloads' : seqDlMetric==='rdl' ? 'Redownloads' : 'Total Downloads';
+
+  var base={imp:0,dl:0,cvrSum:0,days:0}, inf={imp:0,dl:0,cvrSum:0,days:0};
+  dates.forEach(function(d){
+    var r=daily[d];
+    if (d>=baseStart && d<=baseEnd){ base.imp+=r.imp; base.dl+=r[dlKey]; base.cvrSum+=r.cvr; base.days++; }
+    if (d>=infStart  && d<=infEnd ){ inf.imp +=r.imp; inf.dl +=r[dlKey]; inf.cvrSum +=r.cvr; inf.days++;  }
+  });
+
+  var bCVR = base.days ? base.cvrSum/base.days : 0;
+  var iCVR = inf.days  ? inf.cvrSum /inf.days  : 0;
+
+  function pctChange(b,v){ return b ? (v-b)/b*100 : null; }
+  function pctCell(p) {
+    if (p===null) return '<td>—</td>';
+    var bg='', co='#1a1a2e';
+    if (p>0.05){ bg='background:#E8F5E9;'; co='#2E7D32'; }
+    else if (p<-0.05){ bg='background:#FFEBEE;'; co='#C62828'; }
+    var sign = p>0?'+':'';
+    return '<td style="'+bg+'color:'+co+';font-weight:700">'+sign+p.toFixed(1)+'%</td>';
+  }
+
+  var rows = [
+    { label:'Total Impressions',  bVal:Math.round(base.imp), iVal:Math.round(inf.imp),  pct:pctChange(base.imp, inf.imp),  fmt:'n' },
+    { label:dlLabel,              bVal:Math.round(base.dl),  iVal:Math.round(inf.dl),   pct:pctChange(base.dl,  inf.dl),   fmt:'n' },
+    { label:'Avg CVR (%)',        bVal:bCVR,                 iVal:iCVR,                 pct:pctChange(bCVR, iCVR),         fmt:'p' }
+  ];
+
+  var tbody = rows.map(function(r){
+    var bCell = r.fmt==='p' ? r.bVal.toFixed(2)+'%' : r.bVal.toLocaleString();
+    var iCell = r.fmt==='p' ? r.iVal.toFixed(2)+'%' : r.iVal.toLocaleString();
+    return '<tr><td class="ta-l"><strong>'+r.label+'</strong></td><td>'+bCell+'</td><td>'+iCell+'</td>'+pctCell(r.pct)+'</tr>';
+  }).join('');
+
+  el.innerHTML =
+    '<table><thead><tr>'+
+      '<th class="ta-l">Metric</th>'+
+      '<th>Baseline Period</th>'+
+      '<th>Influence Period</th>'+
+      '<th>% Change</th>'+
+    '</tr></thead><tbody>'+tbody+'</tbody></table>';
 }
 
 (function(){
