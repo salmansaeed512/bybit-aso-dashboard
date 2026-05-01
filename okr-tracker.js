@@ -16,15 +16,12 @@ function _syncOKRFilterUI() {
     if (btn) btn.classList.toggle('active', periods[i] === _okrPeriod);
   }
 
+  // Populate from _mem — same source as Traffic Analysis + Sequential Analysis
   var countrySelect = document.getElementById('okr-country');
   if (countrySelect && !countrySelect._okrPopulated) {
-    var cvrKpi = null;
-    for (var k = 0; k < KPI_DEFS.length; k++) {
-      if (KPI_DEFS[k].id === 'cvr') { cvrKpi = KPI_DEFS[k]; break; }
-    }
-    var countries = cvrKpi
-      ? Object.keys(cvrKpi.baselineCVR).filter(function(c){ return c !== 'all'; }).sort()
-      : [];
+    var countries = Object.keys(_mem).filter(function(t) {
+      return Object.keys(_mem[t]).length > 0;
+    }).sort();
     countrySelect.innerHTML = '<option value="all">All Countries</option>';
     for (var ci = 0; ci < countries.length; ci++) {
       countrySelect.innerHTML += '<option value="' + _esc(countries[ci]) + '">' + _esc(countries[ci]) + '</option>';
@@ -109,7 +106,7 @@ function _buildOKRCard(kpi, period, country, source) {
   if (kpi.byCountry || kpi.bySource) {
     var dims = [];
     if (kpi.byCountry) dims.push(country !== 'all' ? country : 'All Countries');
-    if (kpi.bySource)  dims.push(country !== 'all' || source !== 'all' ? _srcLabel(source) : 'All Sources');
+    if (kpi.bySource)  dims.push(source  !== 'all' ? _srcLabel(source) : 'All Sources');
     dimTag = '<div class="okr-dim-tag">' + _esc(dims.join(' · ')) + '</div>';
   }
 
@@ -144,31 +141,70 @@ function _buildOKRCard(kpi, period, country, source) {
   );
 }
 
-/* ── Target / actual resolution ─────────────────────────────── */
+/* ── Date range helper ───────────────────────────────────────── */
+
+function _okrDateRange(period) {
+  var p = OKR_PERIODS[period];
+  return p ? { start: p.start, end: p.end } : null;
+}
+
+/* ── Live data from _mem (same pipeline as Traffic Analysis) ─── */
+
+/* CVR for a period/country/source — uses rangedBucket + calcCVR from index.html */
+function _cvrFromMem(period, country, source) {
+  var dr = _okrDateRange(period);
+  if (!dr) return null;
+  var bucket = rangedBucket(_mem, country, source, dr.start, dr.end);
+  return calcCVR(bucket); // returns null when bucket.imp === 0
+}
+
+/* Browse total downloads (total_browse = ftd_browse + rdl_browse) from _mem */
+function _browseDownloadsFromMem(period, country) {
+  var dr = _okrDateRange(period);
+  if (!dr) return null;
+  var bucket = rangedBucket(_mem, country, 'browse', dr.start, dr.end);
+  return bucket.total > 0 ? bucket.total : null;
+}
+
+/* ── Target resolution ───────────────────────────────────────── */
 
 function _getKPITarget(kpi, period, country, source) {
+  // Fixed config target (e.g. browse_downloads H1: 15000)
   if (kpi.targets && kpi.targets[period] !== undefined) return kpi.targets[period];
 
   if (kpi.targetMultiplier && kpi.targetMultiplier[period]) {
-    var tm = kpi.targetMultiplier[period];
+    var tm   = kpi.targetMultiplier[period];
     var base = null;
-    if (tm.base === 'Q1_baseline') {
-      base = _nestedVal(kpi.baselineCVR, country, source);
+
+    if (tm.base === 'Q1_actual') {
+      // Primary: Q1 CVR computed live from _mem
+      base = _cvrFromMem('Q1', country, source);
+      // Fallback: kpiConfig.js fallbackBaseline (when _mem has no Q1 data)
+      if (base === null && kpi.fallbackBaseline) {
+        base = _nestedVal(kpi.fallbackBaseline, country, source);
+      }
     } else if (tm.base === 'Q2_actual') {
-      var q2 = kpi.actuals && kpi.actuals.Q2 ? kpi.actuals.Q2 : {};
-      base = _nestedVal(q2, country, source);
+      base = _cvrFromMem('Q2', country, source);
     }
-    return (base !== null && base !== undefined) ? base * tm.multiplier : null;
+
+    return base !== null ? base * tm.multiplier : null;
   }
   return null;
 }
 
+/* ── Actual resolution ───────────────────────────────────────── */
+
 function _getKPIActual(kpi, period, country, source) {
-  if (!kpi.actuals || kpi.actuals[period] === undefined) return null;
-  var periodData = kpi.actuals[period];
-  if (typeof periodData === 'number') return periodData;
-  return _nestedVal(periodData, country, source);
+  if (kpi.id === 'cvr') {
+    return _cvrFromMem(period, country, source);
+  }
+  if (kpi.id === 'browse_downloads') {
+    return _browseDownloadsFromMem(period, country);
+  }
+  return null;
 }
+
+/* ── Fallback nested config lookup ──────────────────────────── */
 
 function _nestedVal(obj, country, source) {
   var cKey = (country === 'all' || !obj[country]) ? 'all' : country;
@@ -180,7 +216,7 @@ function _nestedVal(obj, country, source) {
   return (val !== null && val !== undefined) ? val : null;
 }
 
-/* ── Formatting helpers ──────────────────────────────────────── */
+/* ── Formatting ──────────────────────────────────────────────── */
 
 function _fmtKPI(kpi, v) {
   if (v === null || v === undefined) return '—';
@@ -193,7 +229,7 @@ function _fmtKPI(kpi, v) {
 }
 
 function _srcLabel(src) {
-  var m = { search:'App Store Search', browse:'App Store Browse', appref:'App Referrer', webref:'Web Referrer', unavail:'Unavailable' };
+  var m = { all:'All Sources', search:'App Store Search', browse:'App Store Browse', appref:'App Referrer', webref:'Web Referrer', unavail:'Unavailable' };
   return m[src] || src;
 }
 
