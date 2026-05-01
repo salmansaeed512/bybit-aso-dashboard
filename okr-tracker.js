@@ -3,6 +3,12 @@
 var _okrPeriod  = 'Q2';
 var _okrCountry = 'all';
 var _okrSource  = 'all';
+var _okrAdsMode = 'with';
+
+/* Returns the active dataset — adjusted when Organic Only is on */
+function _okrData() {
+  return _okrAdsMode === 'without' ? applyAdsAdjustment(_mem, _adsMem) : _mem;
+}
 
 function renderOKR() {
   _syncOKRFilterUI();
@@ -32,6 +38,11 @@ function _syncOKRFilterUI() {
 
   var sourceSelect = document.getElementById('okr-source');
   if (sourceSelect) sourceSelect.value = _okrSource;
+
+  var withBtn    = document.getElementById('okr-am-with');
+  var withoutBtn = document.getElementById('okr-am-without');
+  if (withBtn)    withBtn.classList.toggle('active',    _okrAdsMode === 'with');
+  if (withoutBtn) withoutBtn.classList.toggle('active', _okrAdsMode === 'without');
 }
 
 function setOKRPeriod(p) {
@@ -46,6 +57,15 @@ function setOKRCountry(v) {
 
 function setOKRSource(v) {
   _okrSource = v;
+  renderOKRCards();
+}
+
+function setOKRAdsMode(m) {
+  _okrAdsMode = m;
+  var withBtn    = document.getElementById('okr-am-with');
+  var withoutBtn = document.getElementById('okr-am-without');
+  if (withBtn)    withBtn.classList.toggle('active',    m === 'with');
+  if (withoutBtn) withoutBtn.classList.toggle('active', m === 'without');
   renderOKRCards();
 }
 
@@ -107,6 +127,7 @@ function _buildOKRCard(kpi, period, country, source) {
     var dims = [];
     if (kpi.byCountry) dims.push(country !== 'all' ? country : 'All Countries');
     if (kpi.bySource)  dims.push(source  !== 'all' ? _srcLabel(source) : 'All Sources');
+    if (_okrAdsMode === 'without') dims.push('⊖ Organic Only');
     dimTag = '<div class="okr-dim-tag">' + _esc(dims.join(' · ')) + '</div>';
   }
 
@@ -148,28 +169,27 @@ function _okrDateRange(period) {
   return p ? { start: p.start, end: p.end } : null;
 }
 
-/* ── Live data from _mem (same pipeline as Traffic Analysis) ─── */
+/* ── Live data from _mem (routed through ads adjustment) ─────── */
 
-/* CVR for a period/country/source — uses rangedBucket + calcCVR from index.html */
+/* CVR for a period/country/source */
 function _cvrFromMem(period, country, source) {
   var dr = _okrDateRange(period);
   if (!dr) return null;
-  var bucket = rangedBucket(_mem, country, source, dr.start, dr.end);
-  return calcCVR(bucket); // returns null when bucket.imp === 0
+  var bucket = rangedBucket(_okrData(), country, source, dr.start, dr.end);
+  return calcCVR(bucket);
 }
 
-/* Browse total downloads (total_browse = ftd_browse + rdl_browse) from _mem */
+/* Browse total downloads (ftd_browse + rdl_browse) */
 function _browseDownloadsFromMem(period, country) {
   var dr = _okrDateRange(period);
   if (!dr) return null;
-  var bucket = rangedBucket(_mem, country, 'browse', dr.start, dr.end);
+  var bucket = rangedBucket(_okrData(), country, 'browse', dr.start, dr.end);
   return bucket.total > 0 ? bucket.total : null;
 }
 
 /* ── Target resolution ───────────────────────────────────────── */
 
 function _getKPITarget(kpi, period, country, source) {
-  // Fixed config target (e.g. browse_downloads H1: 15000)
   if (kpi.targets && kpi.targets[period] !== undefined) return kpi.targets[period];
 
   if (kpi.targetMultiplier && kpi.targetMultiplier[period]) {
@@ -177,9 +197,7 @@ function _getKPITarget(kpi, period, country, source) {
     var base = null;
 
     if (tm.base === 'Q1_actual') {
-      // Primary: Q1 CVR computed live from _mem
       base = _cvrFromMem('Q1', country, source);
-      // Fallback: kpiConfig.js fallbackBaseline (when _mem has no Q1 data)
       if (base === null && kpi.fallbackBaseline) {
         base = _nestedVal(kpi.fallbackBaseline, country, source);
       }

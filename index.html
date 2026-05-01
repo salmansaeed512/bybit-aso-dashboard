@@ -275,6 +275,13 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
         <button id="seq-dl-rdl"                  onclick="setSeqDl('rdl')">Redownloads</button>
       </div>
     </div>
+    <div class="fg">
+      <label>Apple Ads</label>
+      <div class="mtoggle">
+        <button id="seq-am-with"    class="active" onclick="setSeqAdsMode('with')">With Apple Ads</button>
+        <button id="seq-am-without" onclick="setSeqAdsMode('without')">Organic Only</button>
+      </div>
+    </div>
   </div>
   <div class="seq-wrap">
     <div class="seq-card">
@@ -319,6 +326,13 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
         <option value="webref">Web Referrer</option>
         <option value="unavail">Unavailable</option>
       </select>
+    </div>
+    <div class="fg">
+      <label>Apple Ads</label>
+      <div class="mtoggle" style="background:rgba(255,255,255,.06)">
+        <button id="okr-am-with"    class="active" style="color:#94a3b8" onclick="setOKRAdsMode('with')">With Apple Ads</button>
+        <button id="okr-am-without" style="color:#94a3b8" onclick="setOKRAdsMode('without')">Organic Only</button>
+      </div>
     </div>
   </div>
   <div id="okr-cards" class="okr-grid"></div>
@@ -1078,12 +1092,20 @@ function initSeqFilters() {
 }
 
 var seqDlMetric = 'total';
+var seqAdsMode  = 'with';
 
 function setSeqDl(m) {
   seqDlMetric = m;
   ['total','ftd','rdl'].forEach(function(x){
     document.getElementById('seq-dl-'+x).classList.toggle('active', x===m);
   });
+  renderSequential();
+}
+
+function setSeqAdsMode(m) {
+  seqAdsMode = m;
+  document.getElementById('seq-am-with').classList.toggle('active',    m === 'with');
+  document.getElementById('seq-am-without').classList.toggle('active', m === 'without');
   renderSequential();
 }
 
@@ -1114,7 +1136,8 @@ function renderSequential() {
   var rangeEnd   = baseEnd   > infEnd   ? baseEnd   : infEnd;
 
   // Reuse getDailyTotals with the selected territory and source filters
-  var daily = getDailyTotals(_mem, territory, source, rangeStart, rangeEnd);
+  var seqData = seqAdsMode === 'without' ? applyAdsAdjustment(_mem, _adsMem) : _mem;
+  var daily = getDailyTotals(seqData, territory, source, rangeStart, rangeEnd);
   var dates = Object.keys(daily).sort();
   dates.forEach(function(d){ daily[d].cvr = daily[d].imp > 0 ? daily[d].total/daily[d].imp*100 : 0; });
 
