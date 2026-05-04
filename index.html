@@ -591,9 +591,38 @@ function getDailyTotals(data, territory, source, startDate, endDate) {
   return daily;
 }
 
+function _spikeAnalysis(daily, threshold) {
+  var days = Object.keys(daily).sort();
+  if (days.length < 2) return { imp: null, total: null };
+  var n = days.length, sumI = 0, sumT = 0;
+  days.forEach(function(d){ sumI += daily[d].imp; sumT += daily[d].total; });
+  var avgI = sumI / n, avgT = sumT / n;
+  var bestI = null, devI = 0, bestT = null, devT = 0;
+  days.forEach(function(d){
+    if (avgI > 0) { var di = (daily[d].imp   - avgI) / avgI   * 100; if (Math.abs(di) > Math.abs(devI)) { devI = di; bestI = d; } }
+    if (avgT > 0) { var dt = (daily[d].total - avgT) / avgT * 100; if (Math.abs(dt) > Math.abs(devT)) { devT = dt; bestT = d; } }
+  });
+  return {
+    imp:   (bestI && Math.abs(devI) >= threshold) ? { day: bestI, dev: devI } : null,
+    total: (bestT && Math.abs(devT) >= threshold) ? { day: bestT, dev: devT } : null
+  };
+}
+
+function _spikeStr(sp, metric) {
+  var dir = sp.dev > 0 ? 'spiked' : 'dropped';
+  return metric + ' ' + dir + ' on ' + sp.day + ' (' + Math.abs(Math.round(sp.dev)) + '% ' + (sp.dev > 0 ? 'above' : 'below') + ' period avg)';
+}
+
+function _prevLabel(periodLabel) {
+  if (periodLabel === 'MoM') return 'last month';
+  if (periodLabel === 'QoQ') return 'last quarter';
+  if (periodLabel === 'YoY') return 'same week last year';
+  return 'last week';
+}
+
 function generateCVRReason(data, territory, source, latestStart, latestEnd, prevStart, prevEnd, latestB, prevB, latestCVR, prevCVR, periodLabel) {
   if (latestCVR === null) return 'Impressions data is zero or missing — CVR cannot be calculated.';
-  if (prevCVR   === null) return 'Not enough previous '+periodLabel+' data to calculate CVR.';
+  if (prevCVR   === null) return 'Not enough previous ' + periodLabel + ' data to calculate CVR change.';
 
   var cvrDiff = latestCVR - prevCVR;
   var dir     = cvrDiff >= 0 ? 'increased' : 'declined';
@@ -605,39 +634,71 @@ function generateCVRReason(data, territory, source, latestStart, latestEnd, prev
   var totalChg = pct(latestB.total, prevB.total);
   var THRESH   = 10;
 
+  /* Spike detection — lower threshold for short windows */
+  var spikeThresh = (periodLabel === 'WoW' || periodLabel === 'YoY') ? 22 : (periodLabel === 'MoM' ? 28 : 33);
+  var latestDaily = getDailyTotals(data, territory, source, latestStart, latestEnd);
+  var prevDaily   = prevStart ? getDailyTotals(data, territory, source, prevStart, prevEnd) : null;
+  var lSp = _spikeAnalysis(latestDaily, spikeThresh);
+  var pSp = prevDaily ? _spikeAnalysis(prevDaily, spikeThresh) : null;
+
+  /* ── Current period sentence ─────────────────────────────── */
+  var curParts = [];
+
+  /* Aggregate metric-level changes */
   if (impChg !== null && totalChg !== null) {
     if (cvrDiff > 0) {
       if (totalChg > THRESH && totalChg > impChg + THRESH)
-        return 'CVR '+dir+' because Total Downloads grew significantly (+'+ totalChg.toFixed(1)+'% '+periodLabel+') while Impressions changed by only '+(impChg>=0?'+':'')+impChg.toFixed(1)+'%.';
-      if (impChg < -THRESH && Math.abs(totalChg) < THRESH)
-        return 'CVR '+dir+' because Impressions dropped '+impChg.toFixed(1)+'% '+periodLabel+' while Downloads held relatively steady ('+(totalChg>=0?'+':'')+totalChg.toFixed(1)+'%), improving the conversion ratio.';
+        curParts.push('Downloads grew +' + totalChg.toFixed(1) + '% ' + periodLabel + ' while Impressions changed only ' + (impChg >= 0 ? '+' : '') + impChg.toFixed(1) + '%');
+      else if (impChg < -THRESH && Math.abs(totalChg) < THRESH)
+        curParts.push('Impressions fell ' + impChg.toFixed(1) + '% ' + periodLabel + ' while Downloads held steady (' + (totalChg >= 0 ? '+' : '') + totalChg.toFixed(1) + '%)');
     } else {
       if (impChg > THRESH && impChg > totalChg + THRESH)
-        return 'CVR '+dir+' because Impressions rose sharply (+'+impChg.toFixed(1)+'% '+periodLabel+') but Downloads did not grow at the same pace ('+(totalChg>=0?'+':'')+totalChg.toFixed(1)+'%), diluting the conversion rate.';
-      if (totalChg < -THRESH && Math.abs(impChg) < THRESH)
-        return 'CVR '+dir+' because Total Downloads dropped '+totalChg.toFixed(1)+'% '+periodLabel+' while Impressions remained relatively stable ('+(impChg>=0?'+':'')+impChg.toFixed(1)+'%).';
+        curParts.push('Impressions surged +' + impChg.toFixed(1) + '% ' + periodLabel + ' but Downloads only moved ' + (totalChg >= 0 ? '+' : '') + totalChg.toFixed(1) + '%');
+      else if (totalChg < -THRESH && Math.abs(impChg) < THRESH)
+        curParts.push('Downloads fell ' + totalChg.toFixed(1) + '% ' + periodLabel + ' while Impressions held (' + (impChg >= 0 ? '+' : '') + impChg.toFixed(1) + '%)');
     }
   }
 
-  // Daily spike fallback — only meaningful for weekly periods
-  if (periodLabel === 'WoW') {
-    var daily = getDailyTotals(data, territory, source, latestStart, latestEnd);
-    var days  = Object.keys(daily).sort();
-    var avgImp=0, avgTotal=0;
-    days.forEach(function(d){ avgImp+=daily[d].imp; avgTotal+=daily[d].total; });
-    if(days.length){ avgImp/=days.length; avgTotal/=days.length; }
-    var peakImpDay=null,peakImpDev=0,peakTotalDay=null,peakTotalDev=0;
-    days.forEach(function(d){
-      if(avgImp>0){var di=(daily[d].imp-avgImp)/avgImp*100; if(Math.abs(di)>Math.abs(peakImpDev)){peakImpDev=di;peakImpDay=d;}}
-      if(avgTotal>0){var dt=(daily[d].total-avgTotal)/avgTotal*100; if(Math.abs(dt)>Math.abs(peakTotalDev)){peakTotalDev=dt;peakTotalDay=d;}}
-    });
-    if(Math.abs(peakTotalDev)>=20&&Math.abs(peakTotalDev)>Math.abs(peakImpDev))
-      return 'CVR '+dir+' mainly because Total Downloads '+(peakTotalDev>0?'peaked':'dropped')+' on '+peakTotalDay+' ('+Math.abs(Math.round(peakTotalDev))+'% '+(peakTotalDev>0?'above':'below')+' the weekly average), while Impressions stayed relatively stable.';
-    if(Math.abs(peakImpDev)>=20)
-      return 'CVR '+dir+' because Impressions '+(peakImpDev>0?'spiked':'dropped')+' on '+peakImpDay+' ('+Math.abs(Math.round(peakImpDev))+'% '+(peakImpDev>0?'above':'below')+' the weekly average) but Downloads did not move proportionally.';
+  /* Daily spikes in current period */
+  if (lSp.total && lSp.imp) {
+    /* Both spiked — highlight the one whose direction aligns with CVR move */
+    var useTotal = (lSp.total.dev > 0) === (cvrDiff >= 0);
+    curParts.push(_spikeStr(useTotal ? lSp.total : lSp.imp, useTotal ? 'Downloads' : 'Impressions'));
+    curParts.push(_spikeStr(useTotal ? lSp.imp : lSp.total, useTotal ? 'Impressions' : 'Downloads'));
+  } else if (lSp.total) {
+    curParts.push(_spikeStr(lSp.total, 'Downloads'));
+  } else if (lSp.imp) {
+    curParts.push(_spikeStr(lSp.imp, 'Impressions'));
   }
 
-  return 'No major spike or drop detected. The CVR change appears to be driven by normal variation.';
+  /* ── Previous period sentence ────────────────────────────── */
+  var prevParts = [];
+  var prevLbl = _prevLabel(periodLabel);
+
+  if (pSp) {
+    if (pSp.total && pSp.imp) {
+      var useT = (pSp.total.dev > 0) !== (cvrDiff >= 0); /* highlight the one that set an inflated/deflated baseline */
+      prevParts.push(_prevLabel(periodLabel) + ': ' + _spikeStr(useT ? pSp.total : pSp.imp, useT ? 'Downloads' : 'Impressions') + ', setting ' + ((useT ? pSp.total.dev : pSp.imp.dev) > 0 ? 'a higher' : 'a lower') + ' baseline');
+      prevParts.push(_spikeStr(useT ? pSp.imp : pSp.total, useT ? 'Impressions' : 'Downloads'));
+    } else if (pSp.total) {
+      var baseNote = (pSp.total.dev > 0) !== (cvrDiff >= 0) ? ', inflating the comparison base' : ', supporting a strong baseline';
+      prevParts.push(prevLbl.charAt(0).toUpperCase() + prevLbl.slice(1) + ': ' + _spikeStr(pSp.total, 'Downloads') + baseNote);
+    } else if (pSp.imp) {
+      var baseNote = (pSp.imp.dev > 0) !== (cvrDiff >= 0) ? ', suppressing that period\'s CVR' : ', boosting that period\'s CVR';
+      prevParts.push(prevLbl.charAt(0).toUpperCase() + prevLbl.slice(1) + ': ' + _spikeStr(pSp.imp, 'Impressions') + baseNote);
+    } else {
+      prevParts.push(prevLbl.charAt(0).toUpperCase() + prevLbl.slice(1) + ' was stable — no major daily outliers');
+    }
+  }
+
+  /* ── Assemble final insight ──────────────────────────────── */
+  if (!curParts.length && !prevParts.length)
+    return 'No major spike or drop detected in either period. The CVR change appears driven by normal variation.';
+
+  var parts = [];
+  if (curParts.length) parts.push(curParts.join('; ') + '.');
+  if (prevParts.length) parts.push(prevParts.join('; ') + '.');
+  return 'CVR ' + dir + '. ' + parts.join(' ');
 }
 
 function renderInsightCards(data, territory, source, agg) {
