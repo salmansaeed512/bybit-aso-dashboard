@@ -109,6 +109,45 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 .store-btn{padding:5px 16px;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#94a3b8;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
 .store-btn:hover{border-color:rgba(255,255,255,.25);color:#e2e8f0}
 .store-btn.active{background:#F7A600;border-color:#F7A600;color:#0f172a;font-weight:700}
+/* ── Experiments Tab ─────────────────────────────────────────── */
+.exp-toolbar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.exp-title-group{flex:1}
+.exp-heading{font-size:1.2rem;font-weight:700;color:#f8fafc;margin:0 0 3px}
+.exp-subtitle{font-size:.78rem;color:#94a3b8;margin:0}
+.exp-actions{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.exp-sheet-group{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.exp-sheet-input{background:#1e293b;border:1px solid #334155;color:#f8fafc;border-radius:6px;padding:6px 10px;font-size:.78rem;width:280px;outline:none}
+.exp-sheet-input:focus{border-color:#F7A600}
+.exp-row-actions{display:flex;gap:6px}
+.exp-btn{padding:6px 12px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid #334155;background:#1e293b;color:#cbd5e1;transition:all .15s}
+.exp-btn:hover:not(:disabled){border-color:#F7A600;color:#F7A600}
+.exp-btn-save{background:#1e293b;border-color:#475569;color:#94a3b8}
+.exp-btn-save:hover:not(:disabled){background:#0f172a}
+.exp-btn-sheet{background:#14532d;border-color:#16a34a;color:#86efac}
+.exp-btn-sheet:hover:not(:disabled){background:#166534;border-color:#22c55e;color:#fff}
+.exp-btn-sheet:disabled{opacity:.35;cursor:not-allowed}
+.exp-btn-add{background:#1e3a5f;border-color:#3b82f6;color:#93c5fd}
+.exp-btn-add:hover:not(:disabled){background:#1e40af;border-color:#60a5fa;color:#fff}
+.exp-btn-sec:hover:not(:disabled){border-color:#94a3b8;color:#f8fafc}
+.exp-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #1e293b}
+.exp-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.exp-th{background:#0f172a;color:#94a3b8;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:10px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid #1e293b}
+.exp-th-wide{min-width:200px}
+.exp-tr{border-bottom:1px solid #1e293b}
+.exp-tr:last-child{border-bottom:none}
+.exp-tr:hover{background:rgba(255,255,255,.025)}
+.exp-td{padding:7px 10px;vertical-align:middle;color:#e2e8f0}
+.exp-cell{background:transparent;border:1px solid transparent;color:#e2e8f0;font-size:.79rem;width:100%;min-width:100px;outline:none;padding:3px 5px;border-radius:4px}
+.exp-cell:hover{border-color:#334155}
+.exp-cell:focus{background:#1e293b;border-color:#F7A600}
+.exp-cell-wide{min-width:180px}
+.exp-select{background:#1e293b;border:1px solid #334155;color:#e2e8f0;font-size:.78rem;border-radius:4px;padding:3px 5px;cursor:pointer;outline:none}
+.exp-select:focus{border-color:#F7A600}
+.exp-date{background:transparent;border:1px solid transparent;color:#e2e8f0;font-size:.78rem;outline:none;padding:3px 5px;border-radius:4px;width:120px;cursor:pointer}
+.exp-date:hover{border-color:#334155}
+.exp-date:focus{background:#1e293b;border-color:#F7A600}
+.exp-del{background:none;border:none;color:#64748b;cursor:pointer;font-size:.9rem;padding:3px 7px;border-radius:4px;line-height:1;transition:all .15s}
+.exp-del:hover{color:#f87171;background:rgba(248,113,113,.1)}
 </style>
 </head>
 <body>
@@ -134,6 +173,7 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
   <button class="tab-btn"        id="tabn-keywords" onclick="setTab('keywords')">Keyword Rank Tracking</button>
   <button class="tab-btn"        id="tabn-seq"      onclick="setTab('seq')">Sequential Analysis</button>
   <button class="tab-btn"        id="tabn-okr"      onclick="setTab('okr')">OKR Tracker</button>
+  <button class="tab-btn"        id="tabn-experiments" onclick="setTab('experiments')">Experiments</button>
 </div>
 
 <div id="tab-traffic" class="tab-content active">
@@ -348,6 +388,45 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
   </div>
   <div id="okr-cards" class="okr-grid"></div>
 </div>
+<div id="tab-experiments" class="tab-content">
+  <div class="exp-toolbar">
+    <div class="exp-title-group">
+      <h2 class="exp-heading">Experimentation Roadmap</h2>
+      <p class="exp-subtitle">Track A/B tests, metadata experiments, and ASO initiatives &mdash; edits auto-save to your browser</p>
+    </div>
+    <div class="exp-actions">
+      <div class="exp-sheet-group">
+        <input id="exp-sheet-url" type="url" class="exp-sheet-input" placeholder="Paste Google Sheets URL&hellip;" oninput="expUrlChanged()" />
+        <button class="exp-btn exp-btn-save" onclick="expSaveUrl()">Save URL</button>
+        <button class="exp-btn exp-btn-sheet" id="exp-open-sheet" onclick="expOpenSheet()" disabled>Open Sheet &#8599;</button>
+      </div>
+      <div class="exp-row-actions">
+        <button class="exp-btn exp-btn-add" onclick="expAddRow()">+ Add Row</button>
+        <button class="exp-btn exp-btn-sec" onclick="expExport()">&#8595; Export JSON</button>
+        <button class="exp-btn exp-btn-sec" onclick="expImport()">&#8593; Import JSON</button>
+      </div>
+    </div>
+  </div>
+  <div class="exp-table-wrap">
+    <table class="exp-table">
+      <thead>
+        <tr>
+          <th class="exp-th">Experiment Name</th>
+          <th class="exp-th">Status</th>
+          <th class="exp-th">Store</th>
+          <th class="exp-th">Priority</th>
+          <th class="exp-th">Start Date</th>
+          <th class="exp-th">End Date</th>
+          <th class="exp-th exp-th-wide">Hypothesis</th>
+          <th class="exp-th exp-th-wide">Result / Impact</th>
+          <th class="exp-th">Owner</th>
+          <th class="exp-th"></th>
+        </tr>
+      </thead>
+      <tbody id="exp-tbody"></tbody>
+    </table>
+  </div>
+</div>
 
 <script src="kpiConfig.js"></script>
 <script src="okr-tracker.js"></script>
@@ -399,12 +478,13 @@ function toggleMetric(key) {
 }
 
 function setTab(tab) {
-  ['traffic','keywords','seq','okr'].forEach(function(t){
+  ['traffic','keywords','seq','okr','experiments'].forEach(function(t){
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
     document.getElementById('tabn-'+t).classList.toggle('active', t===tab);
   });
   if(tab==='keywords') renderKeywords();
   if(tab==='okr') renderOKR();
+  if(tab==='experiments') expRender();
 }
 
 function setGranularity(g) {
@@ -1511,6 +1591,151 @@ function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) 
     if (kwBrandFilter !== 'all') renderKeywords();
   });
 })();
+
+/* ── Experiments Tab ────────────────────────────────────────────────────── */
+
+var _EXP_KEY     = 'bybit_exp_roadmap';
+var _EXP_URL_KEY = 'bybit_exp_sheet_url';
+var EXP_STATUSES = ['Planned','Running','Complete','Paused','Cancelled'];
+var EXP_STORES   = ['iOS','Android','Both'];
+var EXP_PRIOS    = ['High','Medium','Low'];
+
+function expGetData() {
+  try { var r = localStorage.getItem(_EXP_KEY); if (r) return JSON.parse(r); } catch(e) {}
+  return [
+    { name:'iOS Screenshots A/B Test', status:'Running', store:'iOS', priority:'High',
+      startDate:'2026-04-01', endDate:'2026-05-31',
+      hypothesis:'New lifestyle screenshots increase CVR by 15% vs current product shots',
+      result:'', owner:'ASO Team' },
+    { name:'Localised Metadata — KR & TW', status:'Planned', store:'iOS', priority:'Medium',
+      startDate:'2026-05-15', endDate:'2026-07-15',
+      hypothesis:'Native-language titles and subtitles improve Search CVR in KR and TW by 10%',
+      result:'', owner:'ASO Team' }
+  ];
+}
+
+function expSave(rows) {
+  try { localStorage.setItem(_EXP_KEY, JSON.stringify(rows)); } catch(e) {}
+}
+
+function expRender() {
+  var url = localStorage.getItem(_EXP_URL_KEY) || '';
+  var inp = document.getElementById('exp-sheet-url');
+  if (inp && !inp._expLoaded) { inp.value = url; inp._expLoaded = true; }
+  var openBtn = document.getElementById('exp-open-sheet');
+  if (openBtn) openBtn.disabled = !url;
+  var tbody = document.getElementById('exp-tbody');
+  if (!tbody) return;
+  var rows = expGetData();
+  tbody.innerHTML = rows.map(function(r,i){ return expRowHtml(r,i); }).join('');
+}
+
+function expRowHtml(r, i) {
+  function sel(opts, val) {
+    return opts.map(function(s){
+      return '<option value="'+s+'"'+(val===s?' selected':'')+'>'+s+'</option>';
+    }).join('');
+  }
+  return '<tr class="exp-tr" id="exp-row-'+i+'">' +
+    '<td class="exp-td"><input class="exp-cell exp-cell-wide" value="'+_escExpA(r.name||'')+'" onchange="expField('+i+',\'name\',this.value)" /></td>' +
+    '<td class="exp-td"><select class="exp-select" onchange="expField('+i+',\'status\',this.value)">'+sel(EXP_STATUSES,r.status||'Planned')+'</select></td>' +
+    '<td class="exp-td"><select class="exp-select" onchange="expField('+i+',\'store\',this.value)">'+sel(EXP_STORES,r.store||'iOS')+'</select></td>' +
+    '<td class="exp-td"><select class="exp-select" onchange="expField('+i+',\'priority\',this.value)">'+sel(EXP_PRIOS,r.priority||'Medium')+'</select></td>' +
+    '<td class="exp-td"><input type="date" class="exp-date" value="'+_escExpA(r.startDate||'')+'" onchange="expField('+i+',\'startDate\',this.value)" /></td>' +
+    '<td class="exp-td"><input type="date" class="exp-date" value="'+_escExpA(r.endDate||'')+'" onchange="expField('+i+',\'endDate\',this.value)" /></td>' +
+    '<td class="exp-td"><input class="exp-cell exp-cell-wide" value="'+_escExpA(r.hypothesis||'')+'" onchange="expField('+i+',\'hypothesis\',this.value)" /></td>' +
+    '<td class="exp-td"><input class="exp-cell exp-cell-wide" value="'+_escExpA(r.result||'')+'" onchange="expField('+i+',\'result\',this.value)" /></td>' +
+    '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.owner||'')+'" onchange="expField('+i+',\'owner\',this.value)" /></td>' +
+    '<td class="exp-td"><button class="exp-del" onclick="expDelRow('+i+')" title="Delete row">✕</button></td>' +
+  '</tr>';
+}
+
+function expField(i, field, value) {
+  var rows = expGetData();
+  if (rows[i]) { rows[i][field] = value; expSave(rows); }
+}
+
+function expAddRow() {
+  var rows = expGetData();
+  rows.push({ name:'', status:'Planned', store:'iOS', priority:'Medium',
+               startDate:'', endDate:'', hypothesis:'', result:'', owner:'' });
+  expSave(rows);
+  expRender();
+}
+
+function expDelRow(i) {
+  if (!confirm('Delete this experiment?')) return;
+  var rows = expGetData();
+  rows.splice(i, 1);
+  expSave(rows);
+  expRender();
+}
+
+function expSaveUrl() {
+  var inp = document.getElementById('exp-sheet-url');
+  if (!inp) return;
+  var url = inp.value.trim();
+  localStorage.setItem(_EXP_URL_KEY, url);
+  inp._expLoaded = true;
+  var ob = document.getElementById('exp-open-sheet');
+  if (ob) ob.disabled = !url;
+  _expToast('Sheet URL saved');
+}
+
+function expUrlChanged() {
+  var inp = document.getElementById('exp-sheet-url');
+  var ob  = document.getElementById('exp-open-sheet');
+  if (inp && ob) ob.disabled = !inp.value.trim();
+}
+
+function expOpenSheet() {
+  var url = localStorage.getItem(_EXP_URL_KEY) || (document.getElementById('exp-sheet-url') && document.getElementById('exp-sheet-url').value.trim());
+  if (url) window.open(url, '_blank');
+}
+
+function expExport() {
+  var json = JSON.stringify(expGetData(), null, 2);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(json)
+      .then(function(){ _expToast('JSON copied to clipboard'); })
+      .catch(function(){ _expFallbackCopy(json); });
+  } else { _expFallbackCopy(json); }
+}
+
+function _expFallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); _expToast('JSON copied to clipboard'); }
+  catch(e) { prompt('Copy this JSON:', text); }
+  document.body.removeChild(ta);
+}
+
+function expImport() {
+  var json = prompt('Paste exported JSON here:');
+  if (!json) return;
+  try {
+    var rows = JSON.parse(json);
+    if (!Array.isArray(rows)) throw new Error('Expected a JSON array');
+    expSave(rows);
+    expRender();
+    _expToast('Imported ' + rows.length + ' rows');
+  } catch(e) { alert('Invalid JSON: ' + e.message); }
+}
+
+function _expToast(msg) {
+  var t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2500);
+}
+
+function _escExpA(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 </script>
 </body>
 </html>
