@@ -411,15 +411,15 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
     <table class="exp-table">
       <thead>
         <tr>
-          <th class="exp-th">Experiment Name</th>
           <th class="exp-th">Status</th>
-          <th class="exp-th">Store</th>
-          <th class="exp-th">Priority</th>
+          <th class="exp-th">Market</th>
+          <th class="exp-th">Tactic</th>
+          <th class="exp-th">Asset</th>
           <th class="exp-th">Start Date</th>
           <th class="exp-th">End Date</th>
           <th class="exp-th exp-th-wide">Hypothesis</th>
-          <th class="exp-th exp-th-wide">Result / Impact</th>
-          <th class="exp-th">Owner</th>
+          <th class="exp-th">Results (CVR)</th>
+          <th class="exp-th">Stat. Sig.</th>
           <th class="exp-th"></th>
         </tr>
       </thead>
@@ -1597,20 +1597,51 @@ function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) 
 var _EXP_KEY     = 'bybit_exp_roadmap';
 var _EXP_URL_KEY = 'bybit_exp_sheet_url';
 var EXP_STATUSES = ['Planned','Running','Complete','Paused','Cancelled'];
-var EXP_STORES   = ['iOS','Android','Both'];
-var EXP_PRIOS    = ['High','Medium','Low'];
+var EXP_ASSETS   = ['Screenshots','Video','Icon','Description','Title','Other'];
 
 function expGetData() {
   try { var r = localStorage.getItem(_EXP_KEY); if (r) return JSON.parse(r); } catch(e) {}
   return [
-    { name:'iOS Screenshots A/B Test', status:'Running', store:'iOS', priority:'High',
-      startDate:'2026-04-01', endDate:'2026-05-31',
-      hypothesis:'New lifestyle screenshots increase CVR by 15% vs current product shots',
-      result:'', owner:'ASO Team' },
-    { name:'Localised Metadata — KR & TW', status:'Planned', store:'iOS', priority:'Medium',
-      startDate:'2026-05-15', endDate:'2026-07-15',
-      hypothesis:'Native-language titles and subtitles improve Search CVR in KR and TW by 10%',
-      result:'', owner:'ASO Team' }
+    { status:'Complete', market:'Eng Markets', tactic:'Brand', asset:'Screenshots',
+      startDate:'2026-01-13', endDate:'2026-01-30',
+      hypothesis:'Having brand name on the first screenshot will resonate with users and increase impressions to downloads CVR',
+      result:'3.61% uplift', significance:'100%' },
+    { status:'Complete', market:'Eng Markets', tactic:'Social Proof', asset:'Screenshots',
+      startDate:'2026-02-05', endDate:'2026-02-17',
+      hypothesis:'Having Social Proof in the first three screenshots will resonate with users and increase impressions to downloads CVR',
+      result:'0.60% uplift', significance:'100%' },
+    { status:'Complete', market:'Eng Markets', tactic:'Features', asset:'Screenshots',
+      startDate:'2026-02-18', endDate:'2026-03-31',
+      hypothesis:'Revamping the complete screenshot set with targeting most liked Bybit features in the screenshots will resonate with users and increase impressions to downloads CVR',
+      result:'0.39% uplift', significance:'> 90%' },
+    { status:'Complete', market:'Eng Markets', tactic:'Social Proof', asset:'Screenshots',
+      startDate:'2026-04-14', endDate:'2026-04-27',
+      hypothesis:'Having Social Proof variant 1 (non App UI) screenshot as first screen will resonate with users and increase impressions to downloads CVR',
+      result:'0.14% downlift', significance:'> 90%' },
+    { status:'Running', market:'Eng Markets', tactic:'Order', asset:'Screenshots',
+      startDate:'2026-04-27', endDate:'2026-05-01',
+      hypothesis:'Revamping the complete screenshot set with targeting most liked Bybit features in the screenshots will resonate with users and increase impressions to downloads CVR',
+      result:'In Progress', significance:'In Progress' },
+    { status:'Running', market:'Eng Markets', tactic:'Rebrand', asset:'Screenshots',
+      startDate:'2026-05-01', endDate:'',
+      hypothesis:'Redesigning screenshots as per openness concept as a financial system will resonate with users and increase impressions to downloads CVR',
+      result:'', significance:'' },
+    { status:'Planned', market:'NG, RU, UK, KR, UAE', tactic:'Order', asset:'Screenshots',
+      startDate:'', endDate:'',
+      hypothesis:'Reordering screenshots set will resonate with users and increase impressions to downloads CVR',
+      result:'', significance:'' },
+    { status:'Planned', market:'NG, RU, UK, KR, UAE', tactic:'Functional Messaging', asset:'Screenshots',
+      startDate:'', endDate:'',
+      hypothesis:'Having direct & functional messaging will resonate with users and increase impressions to downloads CVR',
+      result:'', significance:'' },
+    { status:'Planned', market:'NG, RU, UK, KR, UAE', tactic:'Aspirational Messaging', asset:'Screenshots',
+      startDate:'', endDate:'',
+      hypothesis:'Having emotional & aspirational messaging will resonate with users and increase impressions to downloads CVR',
+      result:'', significance:'' },
+    { status:'Planned', market:'NG, RU, UK, KR, UAE', tactic:'App Preview', asset:'Video',
+      startDate:'', endDate:'',
+      hypothesis:'Having App Preview video will resonate with users and increase impressions to downloads CVR',
+      result:'', significance:'' }
   ];
 }
 
@@ -1637,15 +1668,15 @@ function expRowHtml(r, i) {
     }).join('');
   }
   return '<tr class="exp-tr" id="exp-row-'+i+'">' +
-    '<td class="exp-td"><input class="exp-cell exp-cell-wide" value="'+_escExpA(r.name||'')+'" onchange="expField('+i+',\'name\',this.value)" /></td>' +
     '<td class="exp-td"><select class="exp-select" onchange="expField('+i+',\'status\',this.value)">'+sel(EXP_STATUSES,r.status||'Planned')+'</select></td>' +
-    '<td class="exp-td"><select class="exp-select" onchange="expField('+i+',\'store\',this.value)">'+sel(EXP_STORES,r.store||'iOS')+'</select></td>' +
-    '<td class="exp-td"><select class="exp-select" onchange="expField('+i+',\'priority\',this.value)">'+sel(EXP_PRIOS,r.priority||'Medium')+'</select></td>' +
+    '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.market||'')+'" onchange="expField('+i+',\'market\',this.value)" /></td>' +
+    '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.tactic||'')+'" onchange="expField('+i+',\'tactic\',this.value)" /></td>' +
+    '<td class="exp-td"><select class="exp-select" onchange="expField('+i+',\'asset\',this.value)">'+sel(EXP_ASSETS,r.asset||'Screenshots')+'</select></td>' +
     '<td class="exp-td"><input type="date" class="exp-date" value="'+_escExpA(r.startDate||'')+'" onchange="expField('+i+',\'startDate\',this.value)" /></td>' +
     '<td class="exp-td"><input type="date" class="exp-date" value="'+_escExpA(r.endDate||'')+'" onchange="expField('+i+',\'endDate\',this.value)" /></td>' +
     '<td class="exp-td"><input class="exp-cell exp-cell-wide" value="'+_escExpA(r.hypothesis||'')+'" onchange="expField('+i+',\'hypothesis\',this.value)" /></td>' +
-    '<td class="exp-td"><input class="exp-cell exp-cell-wide" value="'+_escExpA(r.result||'')+'" onchange="expField('+i+',\'result\',this.value)" /></td>' +
-    '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.owner||'')+'" onchange="expField('+i+',\'owner\',this.value)" /></td>' +
+    '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.result||'')+'" onchange="expField('+i+',\'result\',this.value)" /></td>' +
+    '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.significance||'')+'" onchange="expField('+i+',\'significance\',this.value)" /></td>' +
     '<td class="exp-td"><button class="exp-del" onclick="expDelRow('+i+')" title="Delete row">✕</button></td>' +
   '</tr>';
 }
@@ -1657,8 +1688,8 @@ function expField(i, field, value) {
 
 function expAddRow() {
   var rows = expGetData();
-  rows.push({ name:'', status:'Planned', store:'iOS', priority:'Medium',
-               startDate:'', endDate:'', hypothesis:'', result:'', owner:'' });
+  rows.push({ status:'Planned', market:'', tactic:'', asset:'Screenshots',
+               startDate:'', endDate:'', hypothesis:'', result:'', significance:'' });
   expSave(rows);
   expRender();
 }
