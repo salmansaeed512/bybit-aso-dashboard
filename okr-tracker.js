@@ -5,9 +5,9 @@ var _okrCountry = 'all';
 var _okrSource  = 'all';
 var _okrAdsMode = 'with';
 
-/* Returns the active dataset — adjusted when Organic Only is on */
+/* Returns the active dataset — routed through store selector + optional ads adjustment */
 function _okrData() {
-  return _okrAdsMode === 'without' ? applyAdsAdjustment(_mem, _adsMem) : _mem;
+  return _getStoreData(_okrAdsMode);
 }
 
 function renderOKR() {
@@ -25,8 +25,9 @@ function _syncOKRFilterUI() {
   // Populate from _mem — same source as Traffic Analysis + Sequential Analysis
   var countrySelect = document.getElementById('okr-country');
   if (countrySelect && !countrySelect._okrPopulated) {
-    var countries = Object.keys(_mem).filter(function(t) {
-      return Object.keys(_mem[t]).length > 0;
+    var _okrStoreData = _getStoreData('with');
+    var countries = Object.keys(_okrStoreData).filter(function(t) {
+      return Object.keys(_okrStoreData[t]).length > 0;
     }).sort();
     countrySelect.innerHTML = '<option value="all">All Countries</option>';
     for (var ci = 0; ci < countries.length; ci++) {
