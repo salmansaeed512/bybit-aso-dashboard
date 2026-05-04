@@ -129,25 +129,32 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 .exp-btn-add{background:#1e3a5f;border-color:#3b82f6;color:#93c5fd}
 .exp-btn-add:hover:not(:disabled){background:#1e40af;border-color:#60a5fa;color:#fff}
 .exp-btn-sec:hover:not(:disabled){border-color:#94a3b8;color:#f8fafc}
-.exp-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #1e293b}
-.exp-table{width:100%;border-collapse:collapse;font-size:.8rem}
-.exp-th{background:#0f172a;color:#94a3b8;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:10px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid #1e293b}
+.exp-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #cbd5e1;background:#fff}
+.exp-table{width:100%;border-collapse:collapse;font-size:.8rem;background:#fff}
+.exp-th{background:#f1f5f9;color:#475569;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:10px 12px;text-align:left;white-space:nowrap;border-bottom:2px solid #e2e8f0}
 .exp-th-wide{min-width:200px}
-.exp-tr{border-bottom:1px solid #1e293b}
+.exp-tr{border-bottom:1px solid #e2e8f0}
 .exp-tr:last-child{border-bottom:none}
-.exp-tr:hover{background:rgba(255,255,255,.025)}
-.exp-td{padding:7px 10px;vertical-align:middle;color:#e2e8f0}
-.exp-cell{background:transparent;border:1px solid transparent;color:#e2e8f0;font-size:.79rem;width:100%;min-width:100px;outline:none;padding:3px 5px;border-radius:4px}
-.exp-cell:hover{border-color:#334155}
-.exp-cell:focus{background:#1e293b;border-color:#F7A600}
+.exp-tr:hover{background:#fafafa}
+.exp-td{padding:7px 10px;vertical-align:top;color:#1e293b}
+.exp-cell{background:transparent;border:1px solid transparent;color:#1e293b;font-size:.79rem;width:100%;min-width:100px;outline:none;padding:3px 5px;border-radius:4px}
+.exp-cell:hover{border-color:#cbd5e1}
+.exp-cell:focus{background:#f8fafc;border-color:#F7A600}
 .exp-cell-wide{min-width:180px}
-.exp-select{background:#1e293b;border:1px solid #334155;color:#e2e8f0;font-size:.78rem;border-radius:4px;padding:3px 5px;cursor:pointer;outline:none}
+.exp-hyp{background:transparent;border:1px solid transparent;color:#1e293b;font-size:.79rem;width:100%;min-width:220px;outline:none;padding:3px 5px;border-radius:4px;resize:none;overflow:hidden;line-height:1.5;font-family:inherit;display:block}
+.exp-hyp:hover{border-color:#cbd5e1}
+.exp-hyp:focus{background:#f8fafc;border-color:#F7A600}
+.exp-select{background:#fff;border:1px solid #cbd5e1;color:#1e293b;font-size:.78rem;border-radius:4px;padding:3px 5px;cursor:pointer;outline:none}
 .exp-select:focus{border-color:#F7A600}
-.exp-date{background:transparent;border:1px solid transparent;color:#e2e8f0;font-size:.78rem;outline:none;padding:3px 5px;border-radius:4px;width:120px;cursor:pointer}
-.exp-date:hover{border-color:#334155}
-.exp-date:focus{background:#1e293b;border-color:#F7A600}
-.exp-del{background:none;border:none;color:#64748b;cursor:pointer;font-size:.9rem;padding:3px 7px;border-radius:4px;line-height:1;transition:all .15s}
-.exp-del:hover{color:#f87171;background:rgba(248,113,113,.1)}
+.exp-date{background:transparent;border:1px solid transparent;color:#1e293b;font-size:.78rem;outline:none;padding:3px 5px;border-radius:4px;width:120px;cursor:pointer}
+.exp-date:hover{border-color:#cbd5e1}
+.exp-date:focus{background:#f8fafc;border-color:#F7A600}
+.exp-result-up{background:#dcfce7}
+.exp-result-up .exp-cell{color:#15803d;font-weight:600}
+.exp-result-down{background:#fee2e2}
+.exp-result-down .exp-cell{color:#dc2626;font-weight:600}
+.exp-del{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:.9rem;padding:3px 7px;border-radius:4px;line-height:1;transition:all .15s}
+.exp-del:hover{color:#dc2626;background:rgba(220,38,38,.1)}
 </style>
 </head>
 <body>
@@ -1659,6 +1666,16 @@ function expRender() {
   if (!tbody) return;
   var rows = expGetData();
   tbody.innerHTML = rows.map(function(r,i){ return expRowHtml(r,i); }).join('');
+  var hyps = tbody.querySelectorAll('.exp-hyp');
+  for (var j=0; j<hyps.length; j++) { hyps[j].style.height='auto'; hyps[j].style.height=hyps[j].scrollHeight+'px'; }
+}
+
+function _expResultClass(v) {
+  if (!v) return '';
+  var lv = v.toLowerCase();
+  if (lv.indexOf('uplift') >= 0) return 'exp-result-up';
+  if (lv.indexOf('downlift') >= 0) return 'exp-result-down';
+  return '';
 }
 
 function expRowHtml(r, i) {
@@ -1667,6 +1684,7 @@ function expRowHtml(r, i) {
       return '<option value="'+s+'"'+(val===s?' selected':'')+'>'+s+'</option>';
     }).join('');
   }
+  var rc = _expResultClass(r.result||'');
   return '<tr class="exp-tr" id="exp-row-'+i+'">' +
     '<td class="exp-td"><select class="exp-select" onchange="expField('+i+',\'status\',this.value)">'+sel(EXP_STATUSES,r.status||'Planned')+'</select></td>' +
     '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.market||'')+'" onchange="expField('+i+',\'market\',this.value)" /></td>' +
@@ -1674,11 +1692,21 @@ function expRowHtml(r, i) {
     '<td class="exp-td"><select class="exp-select" onchange="expField('+i+',\'asset\',this.value)">'+sel(EXP_ASSETS,r.asset||'Screenshots')+'</select></td>' +
     '<td class="exp-td"><input type="date" class="exp-date" value="'+_escExpA(r.startDate||'')+'" onchange="expField('+i+',\'startDate\',this.value)" /></td>' +
     '<td class="exp-td"><input type="date" class="exp-date" value="'+_escExpA(r.endDate||'')+'" onchange="expField('+i+',\'endDate\',this.value)" /></td>' +
-    '<td class="exp-td"><input class="exp-cell exp-cell-wide" value="'+_escExpA(r.hypothesis||'')+'" onchange="expField('+i+',\'hypothesis\',this.value)" /></td>' +
-    '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.result||'')+'" onchange="expField('+i+',\'result\',this.value)" /></td>' +
+    '<td class="exp-td"><textarea class="exp-hyp" onchange="expField('+i+',\'hypothesis\',this.value)" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'">'+_escExpA(r.hypothesis||'')+'</textarea></td>' +
+    '<td class="exp-td '+rc+'"><input class="exp-cell" value="'+_escExpA(r.result||'')+'" onchange="expField('+i+',\'result\',this.value);expUpdateResultColor('+i+',this.value)" /></td>' +
     '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.significance||'')+'" onchange="expField('+i+',\'significance\',this.value)" /></td>' +
     '<td class="exp-td"><button class="exp-del" onclick="expDelRow('+i+')" title="Delete row">✕</button></td>' +
   '</tr>';
+}
+
+function expUpdateResultColor(i, val) {
+  var tr = document.getElementById('exp-row-'+i);
+  if (!tr) return;
+  var td = tr.querySelectorAll('td')[7];
+  if (!td) return;
+  td.classList.remove('exp-result-up','exp-result-down');
+  var cls = _expResultClass(val);
+  if (cls) td.classList.add(cls);
 }
 
 function expField(i, field, value) {
