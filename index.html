@@ -143,9 +143,9 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
       <select id="f-source" onchange="renderTable()">
         <option value="all">All Sources</option>
         <option value="search">Search</option>
-        <option value="browse">Browse / Explore</option>
-        <option value="appref">Ads &amp; Referrals</option>
-        <option value="webref">Web Referrer</option>
+        <option value="browse">Browse</option>
+        <option value="appref">App Referrer Traffic</option>
+        <option value="webref">Web Referrer Traffic</option>
       </select>
     </div>
     <div class="fg">
@@ -253,9 +253,9 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
       <select id="seq-source" onchange="renderSequential()">
         <option value="all">All Sources</option>
         <option value="search">Search</option>
-        <option value="browse">Browse / Explore</option>
-        <option value="appref">Ads &amp; Referrals</option>
-        <option value="webref">Web Referrer</option>
+        <option value="browse">Browse</option>
+        <option value="appref">App Referrer Traffic</option>
+        <option value="webref">Web Referrer Traffic</option>
       </select>
     </div>
     <div class="fg">
@@ -332,9 +332,9 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
       <select id="okr-source" onchange="setOKRSource(this.value)" style="background:#0f172a;color:#f1f5f9;border:1px solid rgba(255,255,255,.12)">
         <option value="all">All Sources</option>
         <option value="search">Search</option>
-        <option value="browse">Browse / Explore</option>
-        <option value="appref">Ads &amp; Referrals</option>
-        <option value="webref">Web Referrer</option>
+        <option value="browse">Browse</option>
+        <option value="appref">App Referrer Traffic</option>
+        <option value="webref">Web Referrer Traffic</option>
         <option value="unavail">Unavailable</option>
       </select>
     </div>
@@ -380,7 +380,7 @@ var selectedMetrics = ALL_METRIC_KEYS.slice();
 var granularity = 'weekly';
 var adsMode = 'with';
 var _activeStore = 'ios';
-var _unifiedCache = {};
+var _unifiedData  = null;
 
 function toggleMetric(key) {
   var idx = selectedMetrics.indexOf(key);
@@ -482,8 +482,8 @@ function aggregate(data, territory, source) {
 }
 
 var SRC_LABELS = {
-  search:'Search', browse:'Browse / Explore',
-  appref:'Ads & Referrals', webref:'Web Referrer'
+  search:'Search', browse:'Browse', appref:'App Referrer Traffic', webref:'Web Referrer Traffic',
+  organic:'Organic', paid:'Paid'
 };
 
 function rangedBucket(data, territory, source, startDate, endDate) {
@@ -570,8 +570,7 @@ function badge(val) {
 }
 
 function tableMeta(source, territory, count, word) {
-  var srcLabel={all:'All Sources',search:'Search',browse:'Browse / Explore',
-    appref:'Ads & Referrals',webref:'Web Referrer',unavail:'Unavailable'}[source]||source;
+  var srcLabel = source==='all' ? (_activeStore==='unified' ? 'All Channels' : 'All Sources') : (SRC_LABELS[source] || source);
   var terrLabel=territory==='all'?'All Countries':territory;
   var adsTag = adsMode==='without' ? ' &nbsp;·&nbsp; <span style="color:#f59e0b;font-weight:600">⊖ iOS Apple Ads excluded</span>' : '';
   return '<div class="table-meta">'+
@@ -844,57 +843,117 @@ function applyAdsAdjustment(ascData, adsData) {
 }
 
 
-function _mergeStores(a, b) {
-  var r = {};
-  function add(src) {
-    Object.keys(src).forEach(function(t) {
-      if (!r[t]) r[t] = {};
-      Object.keys(src[t]).forEach(function(d) {
-        if (!r[t][d]) r[t][d] = {};
-        Object.keys(src[t][d]).forEach(function(k) {
-          r[t][d][k] = (r[t][d][k] || 0) + src[t][d][k];
-        });
-      });
+function _buildUnifiedData() {
+  var result = {};
+  var safe = function(a, b) { return Math.max(0, (a || 0) - (b || 0)); };
+  var territories = {};
+  Object.keys(_mem).forEach(function(t)    { territories[t] = 1; });
+  Object.keys(_memAnd).forEach(function(t) { territories[t] = 1; });
+  Object.keys(territories).forEach(function(t) {
+    result[t] = {};
+    var ios  = _mem[t]    || {};
+    var and  = _memAnd[t] || {};
+    var ads  = _adsMem[t] || {};
+    var dates = {};
+    Object.keys(ios).forEach(function(d) { dates[d] = 1; });
+    Object.keys(and).forEach(function(d) { dates[d] = 1; });
+    Object.keys(dates).forEach(function(d) {
+      var iv = ios[d] || {};
+      var av = and[d] || {};
+      var ad = ads[d] || {};
+      result[t][d] = {
+        imp_organic:   safe(iv.imp_search,   ad.imp)   + (iv.imp_browse   || 0) + (av.imp_search   || 0) + (av.imp_browse   || 0),
+        imp_paid:      (ad.imp   || 0) + (iv.imp_appref   || 0) + (iv.imp_webref   || 0) + (av.imp_appref   || 0),
+        total_organic: safe(iv.total_search, ad.total) + (iv.total_browse || 0) + (av.total_search || 0) + (av.total_browse || 0),
+        total_paid:    (ad.total || 0) + (iv.total_appref || 0) + (iv.total_webref || 0) + (av.total_appref || 0),
+        ftd_organic:   safe(iv.ftd_search,   ad.ftd)   + (iv.ftd_browse   || 0),
+        ftd_paid:      (ad.ftd   || 0) + (iv.ftd_appref   || 0) + (iv.ftd_webref   || 0),
+        rdl_organic:   safe(iv.rdl_search,   ad.rdl)   + (iv.rdl_browse   || 0),
+        rdl_paid:      (ad.rdl   || 0) + (iv.rdl_appref   || 0) + (iv.rdl_webref   || 0)
+      };
     });
-  }
-  add(a); add(b);
-  return r;
+  });
+  return result;
+}
+
+function _updateSourceFilter() {
+  var opts = {
+    ios: [
+      {v:'all',     l:'All Sources'},
+      {v:'search',  l:'Search'},
+      {v:'browse',  l:'Browse'},
+      {v:'appref',  l:'App Referrer Traffic'},
+      {v:'webref',  l:'Web Referrer Traffic'}
+    ],
+    android: [
+      {v:'all',     l:'All Sources'},
+      {v:'search',  l:'Search'},
+      {v:'browse',  l:'Explore'},
+      {v:'appref',  l:'Ads & Referral'}
+    ],
+    unified: [
+      {v:'all',     l:'All Channels'},
+      {v:'organic', l:'Organic'},
+      {v:'paid',    l:'Paid'}
+    ]
+  };
+  var entries = opts[_activeStore] || opts.ios;
+  ['f-source','seq-source','okr-source'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    var cur = sel.value;
+    sel.innerHTML = entries.map(function(o) {
+      return '<option value="'+o.v+'">'+o.l+'</option>';
+    }).join('');
+    var valid = entries.some(function(o) { return o.v === cur; });
+    sel.value = valid ? cur : 'all';
+  });
 }
 
 function _getStoreData(adsMode) {
   if (_activeStore === 'android') return _memAnd;
-  var iosBase = (adsMode === 'without') ? applyAdsAdjustment(_mem, _adsMem) : _mem;
-  if (_activeStore === 'ios') return iosBase;
-  var ck = adsMode;
-  if (!_unifiedCache[ck]) _unifiedCache[ck] = _mergeStores(iosBase, _memAnd);
-  return _unifiedCache[ck];
+  if (_activeStore === 'unified') {
+    if (!_unifiedData) _unifiedData = _buildUnifiedData();
+    return _unifiedData;
+  }
+  return (adsMode === 'without') ? applyAdsAdjustment(_mem, _adsMem) : _mem;
 }
 
 function _syncStoreUI() {
-  var isAnd = _activeStore === 'android';
+  var hideAds = _activeStore !== 'ios';
   ['fg-ads-mode','fg-seq-ads-mode','fg-okr-ads-mode'].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) el.style.display = isAnd ? 'none' : '';
+    if (el) el.style.display = hideAds ? 'none' : '';
   });
-  if (isAnd) {
+  if (hideAds) {
     if (adsMode     !== 'with') setAdsMode('with');
     if (seqAdsMode  !== 'with') setSeqAdsMode('with');
     if (_okrAdsMode !== 'with') setOKRAdsMode('with');
   }
+  var noSplit = _activeStore !== 'ios';
   ['mt-ftd','mt-rdl'].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) { el.style.opacity = isAnd ? '0.35' : ''; el.style.pointerEvents = isAnd ? 'none' : ''; }
+    if (el) { el.style.opacity = noSplit ? '0.35' : ''; el.style.pointerEvents = noSplit ? 'none' : ''; }
   });
   ['seq-dl-ftd','seq-dl-rdl'].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) { el.style.opacity = isAnd ? '0.35' : ''; el.style.pointerEvents = isAnd ? 'none' : ''; }
+    if (el) { el.style.opacity = noSplit ? '0.35' : ''; el.style.pointerEvents = noSplit ? 'none' : ''; }
   });
-  if (isAnd && seqDlMetric !== 'total') setSeqDl('total');
+  if (noSplit && seqDlMetric !== 'total') setSeqDl('total');
+  ALL_SRCS = (_activeStore === 'unified') ? ['organic','paid'] : ['search','browse','appref','webref'];
+  SRC_LABELS = _activeStore === 'ios' ? {
+    search:'Search', browse:'Browse', appref:'App Referrer Traffic', webref:'Web Referrer Traffic', organic:'Organic', paid:'Paid'
+  } : _activeStore === 'android' ? {
+    search:'Search', browse:'Explore', appref:'Ads & Referral', organic:'Organic', paid:'Paid'
+  } : {
+    organic:'Organic', paid:'Paid'
+  };
+  _updateSourceFilter();
 }
 
 function setStore(s) {
   _activeStore = s;
-  _unifiedCache = {};
+  _unifiedData = null;
   ['ios','android','unified'].forEach(function(v) {
     var b = document.getElementById('store-'+v);
     if (b) b.classList.toggle('active', v === s);
@@ -912,6 +971,7 @@ function setStore(s) {
     }
   });
 }
+
 
 function setAdsMode(m) {
   adsMode = m;
