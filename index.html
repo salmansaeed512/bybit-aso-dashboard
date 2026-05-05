@@ -185,7 +185,8 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
   <button class="tab-btn"        id="tabn-seq"      onclick="setTab('seq')">Sequential Analysis</button>
   <button class="tab-btn"        id="tabn-okr"      onclick="setTab('okr')">OKR Tracker</button>
   <button class="tab-btn"        id="tabn-experiments" onclick="setTab('experiments')">Experiments</button>
-  <button class="tab-btn"        id="tabn-metadata"    onclick="setTab('metadata')">Metadata Refreshes &amp; Ranks Tracker</button>
+  <button class="tab-btn"        id="tabn-metadata"    onclick="setTab('metadata')">Metadata Refreshes</button>
+  <button class="tab-btn"        id="tabn-kwranks"     onclick="setTab('kwranks')">Keyword Ranks Tracker</button>
 </div>
 
 <div id="tab-traffic" class="tab-content active">
@@ -473,6 +474,8 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
   </div>
 </div>
 
+<div id="tab-kwranks" class="tab-content"></div>
+
 <script src="kpiConfig.js"></script>
 <script src="okr-tracker.js"></script>
 <script>
@@ -524,7 +527,7 @@ function toggleMetric(key) {
 }
 
 function setTab(tab) {
-  ['traffic','keywords','seq','okr','experiments','metadata'].forEach(function(t){
+  ['traffic','keywords','seq','okr','experiments','metadata','kwranks'].forEach(function(t){
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
     document.getElementById('tabn-'+t).classList.toggle('active', t===tab);
   });
@@ -532,6 +535,7 @@ function setTab(tab) {
   if(tab==='okr') renderOKR();
   if(tab==='experiments') expRender();
   if(tab==='metadata') renderMetadata();
+  if(tab==='kwranks') renderKwRanks();
 }
 
 function setGranularity(g) {
@@ -1922,6 +1926,8 @@ function metaImport() {
 function renderMetadata() {
   metaRender();
 }
+
+function renderKwRanks() {}
 </script>
 </body>
 </html>
