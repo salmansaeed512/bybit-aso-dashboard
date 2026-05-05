@@ -155,6 +155,9 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 .exp-result-down .exp-cell{color:#dc2626;font-weight:600}
 .exp-del{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:.9rem;padding:3px 7px;border-radius:4px;line-height:1;transition:all .15s}
 .exp-del:hover{color:#dc2626;background:rgba(220,38,38,.1)}
+/* ── Metadata Refreshes Tab ─────────────────────────────────────── */
+.meta-section{margin-bottom:32px}
+.meta-section-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
 
 </style>
 </head>
@@ -435,7 +438,38 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
       <tbody id="exp-tbody"></tbody>
     </table>
 
-<div id="tab-metadata" class="tab-content"></div>
+<div id="tab-metadata" class="tab-content">
+  <div class="meta-section">
+    <div class="meta-section-header">
+      <div>
+        <h2 class="exp-heading">Metadata Refreshes</h2>
+        <p class="exp-subtitle">Track every app store metadata update across markets and stores</p>
+      </div>
+      <div class="exp-row-actions">
+        <button class="exp-btn exp-btn-add" onclick="metaAddRow()">+ Add Row</button>
+        <button class="exp-btn exp-btn-sec" onclick="metaExport()">&#8595; Export</button>
+        <button class="exp-btn exp-btn-sec" onclick="metaImport()">&#8593; Import</button>
+      </div>
+    </div>
+    <div class="exp-table-wrap">
+      <table class="exp-table">
+        <thead>
+          <tr>
+            <th class="exp-th">Date</th>
+            <th class="exp-th">Store</th>
+            <th class="exp-th">Market</th>
+            <th class="exp-th">Elements Changed</th>
+            <th class="exp-th">Version</th>
+            <th class="exp-th">Status</th>
+            <th class="exp-th exp-th-wide">Notes</th>
+            <th class="exp-th"></th>
+          </tr>
+        </thead>
+        <tbody id="meta-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
   </div>
 
 </div>
@@ -1813,7 +1847,82 @@ function _escExpA(s) {
 }
 
 
-function renderMetadata() {}
+
+var _META_KEY = 'bybit_meta_refreshes';
+var META_STORES   = ['iOS','Android','Both'];
+var META_STATUSES = ['Live','Pending Review','Rejected','Rolled Back'];
+
+function metaGetData() {
+  try { var r = localStorage.getItem(_META_KEY); if (r) return JSON.parse(r); } catch(e) {}
+  return [
+    { date:'2026-05-05', store:'iOS', market:'Nigeria, Sri Lanka, Pakistan, Kazakhstan', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: Buy Bitcoin & Crypto | Sub: Trusted Exchange & Wallet | KW: coinbase,bnb,okx tether,etrade,coin,stocks,stake,blockchain,stash,apple pay,robinhood,meme,finance' },
+    { date:'2026-05-05', store:'iOS', market:'Nigeria, Sri Lanka, Pakistan, Kazakhstan', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: Bitcoin & Crypto Wallet | Sub: Buy Sell Trade Invest Stake | KW: bnb,tether,stock,exchange,ethereum,eth,btc,solana,trading,forex,cryptocurrency,krypto,trust,xm,gold' },
+    { date:'2026-05-05', store:'iOS', market:'Russia', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: BYBIT: P2P, биткоин, крипто | Sub: Торговля BTC и криптокошелек | KW: тбанк,сбп,конвертер,apple pay,криптовалюта,okx,eth,btc,ton,инвестиции,бинанс,финансы,тинькофф' },
+    { date:'2026-05-05', store:'iOS', market:'Russia', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: торговля криптовалютами | Sub: P2P, биткоин, криптокошелек | KW: криптовалюта,байбит,криптобиржа,криптокошелек,крипто,торговля,инвестиции,btc,wallet,crypto,forex,btc' },
+    { date:'2026-05-05', store:'iOS', market:'Ukraine', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: торгуй криптою Bitcoin | Sub: Біржа криптовалют і ф\'ючерсів | KW: Bitcoin,Crypto,торговля,trustwallet,криптовалюта,киви,бинанс,втб инвестиции,huobi,инвестиции,тинькоф' },
+    { date:'2026-05-05', store:'iOS', market:'Ukraine', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: крипто кошелек | Sub: Trade Crypto, Forex & Stocks | KW: байбит,trading,view,wallet,ledger,bitcoin,usdt,bnb,xtb,blockchain,finance,market,ledger,polymarket' },
+    { date:'2026-05-05', store:'iOS', market:'Israel', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: Buy Bitcoin & Crypto | Sub: Trusted Exchange & Wallet | KW: stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio' },
+    { date:'2026-05-05', store:'iOS', market:'Israel', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: Bitcoin & Crypto Wallet | Sub: Buy Sell Trade Invest Stake | KW: btc,trust,pay,bi,bit,ביט,تداول,tether,trading,bnb,forex,stocks,investing,fx,ledger,card,finance,tap' },
+    { date:'2026-05-05', store:'iOS', market:'Eng (US)', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: Buy Bitcoin & Crypto | Sub: Trusted Exchange & Wallet | KW: stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio' },
+    { date:'2026-05-05', store:'iOS', market:'Eng (US)', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: Crypto & Bitcoin Wallet | Sub: Buy Cryptocurrency & Stocks | KW: exchange,trading,platform,btc,trade,usdt,trust,cripto,krypto,bnb,eth,ethereum,forex,tether,invest,fx' },
+    { date:'2026-05-05', store:'iOS', market:'Eng (AUS)', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: Buy Bitcoin & Crypto | Sub: Trusted Exchange & Wallet | KW: stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio' },
+    { date:'2026-05-05', store:'iOS', market:'Eng (AUS)', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit - Buy Crypto & Stocks | Sub: Trending Exchange & Wallet | KW: card,blockchain,tether,chart,trading,ftmo,coins,xrp,xtb,demo,web3,usdt,day,fbs,tron,fx,mcd,forex,bet' },
+    { date:'2026-05-05', store:'iOS', market:'South Korea', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: Buy Bitcoin & Crypto | Sub: Trusted Exchange & Wallet | KW: stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio' },
+    { date:'2026-05-05', store:'iOS', market:'South Korea', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: Bitcoin & Crypto Wallet | Sub: Buy BTC, USDT, XRP, NFT & more | KW: btcc,cripto,e,trade,trust,coin,blockchain,trading,trade,stocks,exchange,solana,ada,bnb,tether,ripple' },
+    { date:'2026-05-05', store:'iOS', market:'India', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: Buy Bitcoin & Crypto | Sub: Trusted Exchange & Wallet | KW: stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio' },
+    { date:'2026-05-05', store:'iOS', market:'India', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit Crypto Exchange & Wallet | Sub: Buy BTC, USDT, XRP, NFT & more | KW: bitcoin,trading,cryptocurrency,tether,forex,bnb,web3,sell,ripple,ada,solana,trade,eth,stock,market' },
+    { date:'2026-05-05', store:'iOS', market:'Vietnam', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit:Buy Bitcoin,Trade Crypto | Sub: Crypto Spot & Futures Exchange | KW: sàn giao dịch,btc,future,pi network,metamask,huobi,trust,bitback,Tài chính,chứng khoáng,iq option,ảo' },
+    { date:'2026-05-05', store:'iOS', market:'Vietnam', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: Sàn Crypto & Giao Dịch | Sub: Trade & buy BTC & more via P2P | KW: fintech,tiền,ảo,bitcoin,trading,future,wallet,exchange,bitcoin,tether,usdt,mua,xrp,nft,ada,forex,eth' }
+  ];
+}
+function metaSave(rows) { try { localStorage.setItem(_META_KEY, JSON.stringify(rows)); } catch(e) {} }
+
+function metaRender() {
+  var tbody = document.getElementById('meta-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = metaGetData().map(function(r,i){ return metaRowHtml(r,i); }).join('');
+}
+
+function metaRowHtml(r, i) {
+  function sel(opts, val) {
+    return opts.map(function(s){ return '<option value="'+s+'"'+(val===s?' selected':'')+'>'+s+'</option>'; }).join('');
+  }
+  return '<tr class="exp-tr" id="meta-row-'+i+'">' +
+    '<td class="exp-td"><input type="date" class="exp-date" value="'+_escExpA(r.date||'')+'" onchange="metaField('+i+',\'date\',this.value)" /></td>' +
+    '<td class="exp-td"><select class="exp-select" onchange="metaField('+i+',\'store\',this.value)">'+sel(META_STORES,r.store||'iOS')+'</select></td>' +
+    '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.market||'')+'" onchange="metaField('+i+',\'market\',this.value)" /></td>' +
+    '<td class="exp-td"><input class="exp-cell exp-cell-wide" value="'+_escExpA(r.elements||'')+'" onchange="metaField('+i+',\'elements\',this.value)" /></td>' +
+    '<td class="exp-td"><input class="exp-cell" style="width:80px" value="'+_escExpA(r.version||'')+'" onchange="metaField('+i+',\'version\',this.value)" /></td>' +
+    '<td class="exp-td"><select class="exp-select" onchange="metaField('+i+',\'status\',this.value)">'+sel(META_STATUSES,r.status||'Live')+'</select></td>' +
+    '<td class="exp-td"><textarea class="exp-hyp" onchange="metaField('+i+',\'notes\',this.value)" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'">'+_escExpA(r.notes||'')+'</textarea></td>' +
+    '<td class="exp-td"><button class="exp-del" onclick="metaDelRow('+i+')" title="Delete">✕</button></td>' +
+  '</tr>';
+}
+
+function metaField(i, f, v) { var d=metaGetData(); if(d[i]){d[i][f]=v; metaSave(d);} }
+function metaAddRow() {
+  var d=metaGetData();
+  d.push({ date:'', store:'iOS', market:'', elements:'', version:'', status:'Live', notes:'' });
+  metaSave(d); metaRender();
+}
+function metaDelRow(i) {
+  if(!confirm('Delete this row?')) return;
+  var d=metaGetData(); d.splice(i,1); metaSave(d); metaRender();
+}
+function metaExport() {
+  var json=JSON.stringify(metaGetData(),null,2);
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(json).then(function(){_expToast('Metadata JSON copied');}).catch(function(){_expFallbackCopy(json);});
+  else _expFallbackCopy(json);
+}
+function metaImport() {
+  var json=prompt('Paste metadata JSON:'); if(!json) return;
+  try { var d=JSON.parse(json); if(!Array.isArray(d)) throw new Error('Not an array'); metaSave(d); metaRender(); _expToast('Imported '+d.length+' rows'); }
+  catch(e) { alert('Invalid JSON: '+e.message); }
+}
+
+function renderMetadata() {
+  metaRender();
+}
 </script>
 </body>
 </html>
