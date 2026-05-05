@@ -1100,6 +1100,7 @@ function setStore(s) {
   var kwSel = document.getElementById('kw-country');
   if (kwSel) { kwSel.value = ''; document.getElementById('kw-date').innerHTML = ''; initKwCountryFilter(); }
   if (document.getElementById('tabn-keywords') && document.getElementById('tabn-keywords').classList.contains('active')) renderKeywords();
+  if (document.getElementById('tabn-metadata') && document.getElementById('tabn-metadata').classList.contains('active')) renderMetadata();
 }
 
 
@@ -1904,9 +1905,12 @@ function renderMetadata(){
     {label:'Short Description',f:'shortDesc',pk:'',ok:'',ta:false},
     {label:'Long Description',f:'longDesc',pk:'',ok:'',ta:true,tr:4}
   ];
-  wrap.innerHTML=
-    '<p class="meta2-section-title">iOS Metadata</p>'+meta2Table(country,'ios',iosRows)+
-    '<p class="meta2-section-title">Play Store Metadata</p>'+meta2Table(country,'android',andRows);
+  var showIos = (_activeStore === 'ios' || _activeStore === 'unified');
+  var showAnd = (_activeStore === 'android' || _activeStore === 'unified');
+  var html = '';
+  if (showIos) html += '<p class="meta2-section-title">iOS Metadata</p>'+meta2Table(country,'ios',iosRows);
+  if (showAnd) html += '<p class="meta2-section-title">Play Store Metadata</p>'+meta2Table(country,'android',andRows);
+  wrap.innerHTML = html;
   var tas=wrap.querySelectorAll('.meta2-ta');
   for(var i=0;i<tas.length;i++){tas[i].style.height='auto';tas[i].style.height=tas[i].scrollHeight+'px';}
 }
