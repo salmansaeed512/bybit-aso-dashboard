@@ -156,8 +156,11 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 .exp-del{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:.9rem;padding:3px 7px;border-radius:4px;line-height:1;transition:all .15s}
 .exp-del:hover{color:#dc2626;background:rgba(220,38,38,.1)}
 /* ── Metadata Refreshes Tab ─────────────────────────────────────── */
-.meta-section{margin-bottom:32px}
-.meta-section-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.meta2-section-title{font-size:.9rem;font-weight:600;color:#1e293b;margin:24px 0 8px;padding-bottom:4px;border-bottom:1px solid #e2e8f0}
+.meta2-th-field{width:130px;white-space:nowrap}.meta2-th-ver{width:110px}.meta2-th-date{width:145px}
+.meta2-td-field{white-space:nowrap;font-weight:500;color:#475569;font-size:.8rem}
+.meta2-ta{width:100%;resize:vertical;font-family:inherit;font-size:.78rem;padding:4px 6px;border:1px solid #e2e8f0;border-radius:4px;line-height:1.45;box-sizing:border-box;background:#fff}
+.meta2-ta:focus{outline:none;border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.15)}
 
 </style>
 </head>
@@ -442,35 +445,28 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 </div>
 
 <div id="tab-metadata" class="tab-content">
-  <div class="meta-section">
-    <div class="meta-section-header">
-      <div>
-        <h2 class="exp-heading">Metadata Refreshes</h2>
-        <p class="exp-subtitle">Track every app store metadata update across markets and stores</p>
-      </div>
-      <div class="exp-row-actions">
-        <button class="exp-btn exp-btn-add" onclick="metaAddRow()">+ Add Row</button>
-        <button class="exp-btn exp-btn-sec" onclick="metaExport()">&#8595; Export</button>
-        <button class="exp-btn exp-btn-sec" onclick="metaImport()">&#8593; Import</button>
-      </div>
+  <div class="filters-bar">
+    <div class="fg">
+      <label>Country</label>
+      <select id="meta2-country" onchange="renderMetadata()">
+        <option value="">Select Country</option>
+        <option value="Nigeria">Nigeria</option>
+        <option value="Sri Lanka">Sri Lanka</option>
+        <option value="Pakistan">Pakistan</option>
+        <option value="Kazakhstan">Kazakhstan</option>
+        <option value="Russia">Russia</option>
+        <option value="Ukraine">Ukraine</option>
+        <option value="Israel">Israel</option>
+        <option value="Eng (US)">Eng (US)</option>
+        <option value="Eng (AUS)">Eng (AUS)</option>
+        <option value="South Korea">South Korea</option>
+        <option value="India">India</option>
+        <option value="Vietnam">Vietnam</option>
+      </select>
     </div>
-    <div class="exp-table-wrap">
-      <table class="exp-table">
-        <thead>
-          <tr>
-            <th class="exp-th">Date</th>
-            <th class="exp-th">Store</th>
-            <th class="exp-th">Market</th>
-            <th class="exp-th">Elements Changed</th>
-            <th class="exp-th">Version</th>
-            <th class="exp-th">Status</th>
-            <th class="exp-th exp-th-wide">Notes</th>
-            <th class="exp-th"></th>
-          </tr>
-        </thead>
-        <tbody id="meta-tbody"></tbody>
-      </table>
-    </div>
+  </div>
+  <div id="meta2-content">
+    <div class="empty"><h3>Select a country to view metadata</h3></div>
   </div>
 </div>
 
@@ -1851,80 +1847,68 @@ function _escExpA(s) {
 
 
 
-var _META_KEY = 'bybit_meta_refreshes';
-var META_STORES   = ['iOS','Android','Both'];
-var META_STATUSES = ['Live','Pending Review','Rejected','Rolled Back'];
+var _meta2Src = {"Nigeria":{"pTitle":"Bybit: Buy Bitcoin & Crypto","pSub":"Trusted Exchange & Wallet","pKw":"coinbase,bnb,okx tether,etrade,coin,stocks,stake,blockchain,stash,apple pay,robinhood,meme,finance","oTitle":"Bybit: Bitcoin & Crypto Wallet","oSub":"Buy Sell Trade Invest Stake","oKw":"bnb,tether,stock,exchange,ethereum,eth,btc,solana,trading,forex,cryptocurrency,krypto,trust,xm,gold"},"Sri Lanka":{"pTitle":"Bybit: Buy Bitcoin & Crypto","pSub":"Trusted Exchange & Wallet","pKw":"coinbase,bnb,okx tether,etrade,coin,stocks,stake,blockchain,stash,apple pay,robinhood,meme,finance","oTitle":"Bybit: Bitcoin & Crypto Wallet","oSub":"Buy Sell Trade Invest Stake","oKw":"bnb,tether,stock,exchange,ethereum,eth,btc,solana,trading,forex,cryptocurrency,krypto,trust,xm,gold"},"Pakistan":{"pTitle":"Bybit: Buy Bitcoin & Crypto","pSub":"Trusted Exchange & Wallet","pKw":"coinbase,bnb,okx tether,etrade,coin,stocks,stake,blockchain,stash,apple pay,robinhood,meme,finance","oTitle":"Bybit: Bitcoin & Crypto Wallet","oSub":"Buy Sell Trade Invest Stake","oKw":"bnb,tether,stock,exchange,ethereum,eth,btc,solana,trading,forex,cryptocurrency,krypto,trust,xm,gold"},"Kazakhstan":{"pTitle":"Bybit: Buy Bitcoin & Crypto","pSub":"Trusted Exchange & Wallet","pKw":"coinbase,bnb,okx tether,etrade,coin,stocks,stake,blockchain,stash,apple pay,robinhood,meme,finance","oTitle":"Bybit: Bitcoin & Crypto Wallet","oSub":"Buy Sell Trade Invest Stake","oKw":"bnb,tether,stock,exchange,ethereum,eth,btc,solana,trading,forex,cryptocurrency,krypto,trust,xm,gold"},"Russia":{"pTitle":"BYBIT: P2P, биткоин, крипто","pSub":"Торговля BTC и криптокошелек","pKw":"тбанк,сбп,конвертер,apple pay,криптовалюта,okx,eth,btc,ton,инвестиции,бинанс,финансы,тинькофф","oTitle":"Bybit: торговля криптовалютами","oSub":"P2P, биткоин, криптокошелек","oKw":"криптовалюта,байбит,криптобиржа,криптокошелек,крипто,торговля,инвестиции,btc,wallet,crypto,forex,btc"},"Ukraine":{"pTitle":"Bybit: торгуй криптою Bitcoin","pSub":"Біржа криптовалют і ф'ючерсів","pKw":"Bitcoin,Crypto,торговля,trustwallet,криптовалюта,киви,бинанс,втб инвестиции,huobi,инвестиции,тинькоф","oTitle":"Bybit: крипто кошелек","oSub":"Trade Crypto, Forex & Stocks","oKw":"байбит,trading,view,wallet,ledger,bitcoin,usdt,bnb,xtb,blockchain,finance,market,ledger,polymarket"},"Israel":{"pTitle":"Bybit: Buy Bitcoin & Crypto","pSub":"Trusted Exchange & Wallet","pKw":"stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio","oTitle":"Bybit: Bitcoin & Crypto Wallet","oSub":"Buy Sell Trade Invest Stake","oKw":"btc,trust,pay,bi,bit,ביט,تداول,tether,trading,bnb,forex,stocks,investing,fx,ledger,card,finance,tap"},"Eng (US)":{"pTitle":"Bybit: Buy Bitcoin & Crypto","pSub":"Trusted Exchange & Wallet","pKw":"stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio","oTitle":"Bybit: Crypto & Bitcoin Wallet","oSub":"Buy Cryptocurrency & Stocks","oKw":"exchange,trading,platform,btc,trade,usdt,trust,cripto,krypto,bnb,eth,ethereum,forex,tether,invest,fx"},"Eng (AUS)":{"pTitle":"Bybit: Buy Bitcoin & Crypto","pSub":"Trusted Exchange & Wallet","pKw":"stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio","oTitle":"Bybit - Buy Crypto & Stocks","oSub":"Trending Exchange & Wallet","oKw":"card,blockchain,tether,chart,trading,ftmo,coins,xrp,xtb,demo,web3,usdt,day,fbs,tron,fx,mcd,forex,bet"},"South Korea":{"pTitle":"Bybit: Buy Bitcoin & Crypto","pSub":"Trusted Exchange & Wallet","pKw":"stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio","oTitle":"Bybit: Bitcoin & Crypto Wallet","oSub":"Buy BTC, USDT, XRP, NFT & more","oKw":"btcc,cripto,e,trade,trust,coin,blockchain,trading,trade,stocks,exchange,solana,ada,bnb,tether,ripple"},"India":{"pTitle":"Bybit: Buy Bitcoin & Crypto","pSub":"Trusted Exchange & Wallet","pKw":"stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio","oTitle":"Bybit Crypto Exchange & Wallet","oSub":"Buy BTC, USDT, XRP, NFT & more","oKw":"bitcoin,trading,cryptocurrency,tether,forex,bnb,web3,sell,ripple,ada,solana,trade,eth,stock,market"},"Vietnam":{"pTitle":"Bybit:Buy Bitcoin,Trade Crypto","pSub":"Crypto Spot & Futures Exchange","pKw":"sàn giao dịch,btc,future,pi network,metamask,huobi,trust,bitback,Tài chính,chứng khoáng,iq option,ảo","oTitle":"Bybit: Sàn Crypto & Giao Dịch","oSub":"Trade & buy BTC & more via P2P","oKw":"fintech,tiền,ảo,bitcoin,trading,future,wallet,exchange,bitcoin,tether,usdt,mua,xrp,nft,ada,forex,eth"}};
+var _META2_PFX = 'bybit_meta2';
 
-function metaGetData() {
-  try { var r = localStorage.getItem(_META_KEY); if (r) return JSON.parse(r); } catch(e) {}
-  return [
-    { date:'2026-05-05', store:'iOS', market:'Nigeria, Sri Lanka, Pakistan, Kazakhstan', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: Buy Bitcoin & Crypto | Sub: Trusted Exchange & Wallet | KW: coinbase,bnb,okx tether,etrade,coin,stocks,stake,blockchain,stash,apple pay,robinhood,meme,finance' },
-    { date:'2026-05-05', store:'iOS', market:'Nigeria, Sri Lanka, Pakistan, Kazakhstan', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: Bitcoin & Crypto Wallet | Sub: Buy Sell Trade Invest Stake | KW: bnb,tether,stock,exchange,ethereum,eth,btc,solana,trading,forex,cryptocurrency,krypto,trust,xm,gold' },
-    { date:'2026-05-05', store:'iOS', market:'Russia', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: BYBIT: P2P, биткоин, крипто | Sub: Торговля BTC и криптокошелек | KW: тбанк,сбп,конвертер,apple pay,криптовалюта,okx,eth,btc,ton,инвестиции,бинанс,финансы,тинькофф' },
-    { date:'2026-05-05', store:'iOS', market:'Russia', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: торговля криптовалютами | Sub: P2P, биткоин, криптокошелек | KW: криптовалюта,байбит,криптобиржа,криптокошелек,крипто,торговля,инвестиции,btc,wallet,crypto,forex,btc' },
-    { date:'2026-05-05', store:'iOS', market:'Ukraine', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: торгуй криптою Bitcoin | Sub: Біржа криптовалют і ф\'ючерсів | KW: Bitcoin,Crypto,торговля,trustwallet,криптовалюта,киви,бинанс,втб инвестиции,huobi,инвестиции,тинькоф' },
-    { date:'2026-05-05', store:'iOS', market:'Ukraine', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: крипто кошелек | Sub: Trade Crypto, Forex & Stocks | KW: байбит,trading,view,wallet,ledger,bitcoin,usdt,bnb,xtb,blockchain,finance,market,ledger,polymarket' },
-    { date:'2026-05-05', store:'iOS', market:'Israel', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: Buy Bitcoin & Crypto | Sub: Trusted Exchange & Wallet | KW: stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio' },
-    { date:'2026-05-05', store:'iOS', market:'Israel', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: Bitcoin & Crypto Wallet | Sub: Buy Sell Trade Invest Stake | KW: btc,trust,pay,bi,bit,ביט,تداول,tether,trading,bnb,forex,stocks,investing,fx,ledger,card,finance,tap' },
-    { date:'2026-05-05', store:'iOS', market:'Eng (US)', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: Buy Bitcoin & Crypto | Sub: Trusted Exchange & Wallet | KW: stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio' },
-    { date:'2026-05-05', store:'iOS', market:'Eng (US)', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: Crypto & Bitcoin Wallet | Sub: Buy Cryptocurrency & Stocks | KW: exchange,trading,platform,btc,trade,usdt,trust,cripto,krypto,bnb,eth,ethereum,forex,tether,invest,fx' },
-    { date:'2026-05-05', store:'iOS', market:'Eng (AUS)', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: Buy Bitcoin & Crypto | Sub: Trusted Exchange & Wallet | KW: stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio' },
-    { date:'2026-05-05', store:'iOS', market:'Eng (AUS)', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit - Buy Crypto & Stocks | Sub: Trending Exchange & Wallet | KW: card,blockchain,tether,chart,trading,ftmo,coins,xrp,xtb,demo,web3,usdt,day,fbs,tron,fx,mcd,forex,bet' },
-    { date:'2026-05-05', store:'iOS', market:'South Korea', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: Buy Bitcoin & Crypto | Sub: Trusted Exchange & Wallet | KW: stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio' },
-    { date:'2026-05-05', store:'iOS', market:'South Korea', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: Bitcoin & Crypto Wallet | Sub: Buy BTC, USDT, XRP, NFT & more | KW: btcc,cripto,e,trade,trust,coin,blockchain,trading,trade,stocks,exchange,solana,ada,bnb,tether,ripple' },
-    { date:'2026-05-05', store:'iOS', market:'India', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit: Buy Bitcoin & Crypto | Sub: Trusted Exchange & Wallet | KW: stake,btc,trading,tether,invest,ada,sell,solana,etherium,ripple,trade,sol,option,pocket,portfolio' },
-    { date:'2026-05-05', store:'iOS', market:'India', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit Crypto Exchange & Wallet | Sub: Buy BTC, USDT, XRP, NFT & more | KW: bitcoin,trading,cryptocurrency,tether,forex,bnb,web3,sell,ripple,ada,solana,trade,eth,stock,market' },
-    { date:'2026-05-05', store:'iOS', market:'Vietnam', elements:'Title, Subtitle, Keywords Field', version:'', status:'Live', notes:'Title: Bybit:Buy Bitcoin,Trade Crypto | Sub: Crypto Spot & Futures Exchange | KW: sàn giao dịch,btc,future,pi network,metamask,huobi,trust,bitback,Tài chính,chứng khoáng,iq option,ảo' },
-    { date:'2026-05-05', store:'iOS', market:'Vietnam', elements:'Title, Subtitle, Keywords Field', version:'', status:'Pending Review', notes:'Title: Bybit: Sàn Crypto & Giao Dịch | Sub: Trade & buy BTC & more via P2P | KW: fintech,tiền,ảo,bitcoin,trading,future,wallet,exchange,bitcoin,tether,usdt,mua,xrp,nft,ada,forex,eth' }
-  ];
-}
-function metaSave(rows) { try { localStorage.setItem(_META_KEY, JSON.stringify(rows)); } catch(e) {} }
+function meta2Key(c,p,f,k){return _META2_PFX+'_'+c.replace(/\W/g,'_')+'_'+p+'_'+f+'_'+k;}
+function meta2Load(c,p,f,k,fb){var v=null;try{v=localStorage.getItem(meta2Key(c,p,f,k));}catch(e){}return v!==null?v:(fb||'');}
+function meta2Change(el){try{localStorage.setItem(meta2Key(el.dataset.c,el.dataset.p,el.dataset.f,el.dataset.k),el.value);}catch(e){}}
 
-function metaRender() {
-  var tbody = document.getElementById('meta-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = metaGetData().map(function(r,i){ return metaRowHtml(r,i); }).join('');
-}
-
-function metaRowHtml(r, i) {
-  function sel(opts, val) {
-    return opts.map(function(s){ return '<option value="'+s+'"'+(val===s?' selected':'')+'>'+s+'</option>'; }).join('');
+function meta2Cell(c,p,f,k,fb,isTA,taRows){
+  var val=meta2Load(c,p,f,k,fb);
+  var ds='data-c="'+_escExpA(c)+'" data-p="'+p+'" data-f="'+f+'" data-k="'+k+'"';
+  if(isTA){
+    var r=taRows||3;
+    return '<textarea class="meta2-ta" rows="'+r+'" '+ds+' onchange="meta2Change(this)" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'">'+_escExpA(val)+'</textarea>';
   }
-  return '<tr class="exp-tr" id="meta-row-'+i+'">' +
-    '<td class="exp-td"><input type="date" class="exp-date" value="'+_escExpA(r.date||'')+'" onchange="metaField('+i+',\'date\',this.value)" /></td>' +
-    '<td class="exp-td"><select class="exp-select" onchange="metaField('+i+',\'store\',this.value)">'+sel(META_STORES,r.store||'iOS')+'</select></td>' +
-    '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.market||'')+'" onchange="metaField('+i+',\'market\',this.value)" /></td>' +
-    '<td class="exp-td"><input class="exp-cell exp-cell-wide" value="'+_escExpA(r.elements||'')+'" onchange="metaField('+i+',\'elements\',this.value)" /></td>' +
-    '<td class="exp-td"><input class="exp-cell" style="width:80px" value="'+_escExpA(r.version||'')+'" onchange="metaField('+i+',\'version\',this.value)" /></td>' +
-    '<td class="exp-td"><select class="exp-select" onchange="metaField('+i+',\'status\',this.value)">'+sel(META_STATUSES,r.status||'Live')+'</select></td>' +
-    '<td class="exp-td"><textarea class="exp-hyp" onchange="metaField('+i+',\'notes\',this.value)" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'">'+_escExpA(r.notes||'')+'</textarea></td>' +
-    '<td class="exp-td"><button class="exp-del" onclick="metaDelRow('+i+')" title="Delete">✕</button></td>' +
-  '</tr>';
+  if(k==='subDate'||k==='liveDate'){return '<input type="date" class="exp-date" '+ds+' value="'+_escExpA(val)+'" onchange="meta2Change(this)" />';}
+  return '<input class="exp-cell" style="width:100%;min-width:110px" '+ds+' value="'+_escExpA(val)+'" onchange="meta2Change(this)" />';
 }
 
-function metaField(i, f, v) { var d=metaGetData(); if(d[i]){d[i][f]=v; metaSave(d);} }
-function metaAddRow() {
-  var d=metaGetData();
-  d.push({ date:'', store:'iOS', market:'', elements:'', version:'', status:'Live', notes:'' });
-  metaSave(d); metaRender();
-}
-function metaDelRow(i) {
-  if(!confirm('Delete this row?')) return;
-  var d=metaGetData(); d.splice(i,1); metaSave(d); metaRender();
-}
-function metaExport() {
-  var json=JSON.stringify(metaGetData(),null,2);
-  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(json).then(function(){_expToast('Metadata JSON copied');}).catch(function(){_expFallbackCopy(json);});
-  else _expFallbackCopy(json);
-}
-function metaImport() {
-  var json=prompt('Paste metadata JSON:'); if(!json) return;
-  try { var d=JSON.parse(json); if(!Array.isArray(d)) throw new Error('Not an array'); metaSave(d); metaRender(); _expToast('Imported '+d.length+' rows'); }
-  catch(e) { alert('Invalid JSON: '+e.message); }
+function meta2Table(country,platform,rows){
+  var src=(platform==='ios'&&_meta2Src[country])?_meta2Src[country]:{};
+  var hdr='<thead><tr>'+
+    '<th class="exp-th meta2-th-field">Field</th>'+
+    '<th class="exp-th">Previous Metadata</th>'+
+    '<th class="exp-th meta2-th-ver">Release Version</th>'+
+    '<th class="exp-th">Optimised Metadata</th>'+
+    '<th class="exp-th meta2-th-ver">New Version</th>'+
+    '<th class="exp-th meta2-th-date">Release Submission Date</th>'+
+    '<th class="exp-th meta2-th-date">Metadata Live Date</th>'+
+    '</tr></thead>';
+  var bdy='<tbody>'+rows.map(function(r){
+    return '<tr class="exp-tr">'+
+      '<td class="exp-td meta2-td-field">'+r.label+'</td>'+
+      '<td class="exp-td">'+meta2Cell(country,platform,r.f,'prev',src[r.pk]||'',r.ta,r.tr)+'</td>'+
+      '<td class="exp-td">'+meta2Cell(country,platform,r.f,'relVer','',false)+'</td>'+
+      '<td class="exp-td">'+meta2Cell(country,platform,r.f,'opt',src[r.ok]||'',r.ta,r.tr)+'</td>'+
+      '<td class="exp-td">'+meta2Cell(country,platform,r.f,'newVer','',false)+'</td>'+
+      '<td class="exp-td">'+meta2Cell(country,platform,r.f,'subDate','',false)+'</td>'+
+      '<td class="exp-td">'+meta2Cell(country,platform,r.f,'liveDate','',false)+'</td>'+
+      '</tr>';
+  }).join('')+'</tbody>';
+  return '<div class="exp-table-wrap"><table class="exp-table">'+hdr+bdy+'</table></div>';
 }
 
-function renderMetadata() {
-  metaRender();
+function renderMetadata(){
+  var country=document.getElementById('meta2-country').value;
+  var wrap=document.getElementById('meta2-content');
+  if(!country){wrap.innerHTML='<div class="empty"><h3>Select a country to view metadata</h3></div>';return;}
+  var iosRows=[
+    {label:'Title',f:'title',pk:'pTitle',ok:'oTitle',ta:false},
+    {label:'Subtitle',f:'sub',pk:'pSub',ok:'oSub',ta:false},
+    {label:'Keywords Set',f:'kw',pk:'pKw',ok:'oKw',ta:true,tr:3}
+  ];
+  var andRows=[
+    {label:'Title',f:'title',pk:'',ok:'',ta:false},
+    {label:'Short Description',f:'shortDesc',pk:'',ok:'',ta:false},
+    {label:'Long Description',f:'longDesc',pk:'',ok:'',ta:true,tr:4}
+  ];
+  wrap.innerHTML=
+    '<p class="meta2-section-title">iOS Metadata</p>'+meta2Table(country,'ios',iosRows)+
+    '<p class="meta2-section-title">Play Store Metadata</p>'+meta2Table(country,'android',andRows);
+  var tas=wrap.querySelectorAll('.meta2-ta');
+  for(var i=0;i<tas.length;i++){tas[i].style.height='auto';tas[i].style.height=tas[i].scrollHeight+'px';}
 }
 
 function renderKwRanks() {}
