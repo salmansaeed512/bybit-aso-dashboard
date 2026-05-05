@@ -155,11 +155,7 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 .exp-result-down .exp-cell{color:#dc2626;font-weight:600}
 .exp-del{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:.9rem;padding:3px 7px;border-radius:4px;line-height:1;transition:all .15s}
 .exp-del:hover{color:#dc2626;background:rgba(220,38,38,.1)}
-/* ── Metadata & Ranks Tab ────────────────────────────────────── */
-.meta-section{margin-bottom:32px}
-.meta-section-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
-.rank-change-up{background:#dcfce7}.rank-change-up .exp-cell{color:#15803d;font-weight:600}
-.rank-change-down{background:#fee2e2}.rank-change-down .exp-cell{color:#dc2626;font-weight:600}
+
 </style>
 </head>
 <body>
@@ -186,7 +182,7 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
   <button class="tab-btn"        id="tabn-seq"      onclick="setTab('seq')">Sequential Analysis</button>
   <button class="tab-btn"        id="tabn-okr"      onclick="setTab('okr')">OKR Tracker</button>
   <button class="tab-btn"        id="tabn-experiments" onclick="setTab('experiments')">Experiments</button>
-  <button class="tab-btn"        id="tabn-metadata"    onclick="setTab('metadata')">Metadata &amp; Ranks</button>
+  <button class="tab-btn"        id="tabn-metadata"    onclick="setTab('metadata')">Metadata Refreshes &amp; Ranks Tracker</button>
 </div>
 
 <div id="tab-traffic" class="tab-content active">
@@ -437,72 +433,7 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
         </tr>
       </thead>
       <tbody id="exp-tbody"></tbody>
-    </table>
-  </div>
-</div>
-<div id="tab-metadata" class="tab-content">
-
-  <div class="meta-section">
-    <div class="meta-section-header">
-      <div>
-        <h2 class="exp-heading">Metadata Refreshes</h2>
-        <p class="exp-subtitle">Track every app store metadata update across markets and stores</p>
-      </div>
-      <div class="exp-row-actions">
-        <button class="exp-btn exp-btn-add" onclick="metaAddRow()">+ Add Row</button>
-        <button class="exp-btn exp-btn-sec" onclick="metaExport()">&#8595; Export</button>
-        <button class="exp-btn exp-btn-sec" onclick="metaImport()">&#8593; Import</button>
-      </div>
-    </div>
-    <div class="exp-table-wrap">
-      <table class="exp-table">
-        <thead>
-          <tr>
-            <th class="exp-th">Date</th>
-            <th class="exp-th">Store</th>
-            <th class="exp-th">Market</th>
-            <th class="exp-th">Elements Changed</th>
-            <th class="exp-th">Version</th>
-            <th class="exp-th">Status</th>
-            <th class="exp-th exp-th-wide">Notes</th>
-            <th class="exp-th"></th>
-          </tr>
-        </thead>
-        <tbody id="meta-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="meta-section">
-    <div class="meta-section-header">
-      <div>
-        <h2 class="exp-heading">Keyword Rank Tracker</h2>
-        <p class="exp-subtitle">Snapshot keyword positions over time &mdash; use &#9650; prefix for improvement, &#9660; for decline</p>
-      </div>
-      <div class="exp-row-actions">
-        <button class="exp-btn exp-btn-add" onclick="rankAddRow()">+ Add Row</button>
-        <button class="exp-btn exp-btn-sec" onclick="rankExport()">&#8595; Export</button>
-        <button class="exp-btn exp-btn-sec" onclick="rankImport()">&#8593; Import</button>
-      </div>
-    </div>
-    <div class="exp-table-wrap">
-      <table class="exp-table">
-        <thead>
-          <tr>
-            <th class="exp-th">Date</th>
-            <th class="exp-th">Keyword</th>
-            <th class="exp-th">Market</th>
-            <th class="exp-th">Store</th>
-            <th class="exp-th">Rank</th>
-            <th class="exp-th">Change</th>
-            <th class="exp-th">Volume</th>
-            <th class="exp-th exp-th-wide">Notes</th>
-            <th class="exp-th"></th>
-          </tr>
-        </thead>
-        <tbody id="rank-tbody"></tbody>
-      </table>
-    </div>
+    </table<div id="tab-metadata" class="tab-content"></div>>
   </div>
 
 </div>
@@ -1869,156 +1800,7 @@ function _escExpA(s) {
 }
 
 
-/* ── Metadata Refreshes & Rank Tracker Tab ──────────────────────────────── */
-
-var _META_KEY = 'bybit_meta_refreshes';
-var _RANK_KEY = 'bybit_rank_tracker';
-var META_STORES   = ['iOS','Android','Both'];
-var META_ELEMENTS = ['Screenshots','App Preview','Icon','Title','Subtitle','Keywords Field','Description','Promotional Text','In-App Events','Other'];
-var META_STATUSES = ['Live','Pending Review','Rejected','Rolled Back'];
-var RANK_STORES   = ['iOS','Android'];
-
-/* ── Metadata Refreshes ───────────────────────────────────────────────── */
-
-function metaGetData() {
-  try { var r = localStorage.getItem(_META_KEY); if (r) return JSON.parse(r); } catch(e) {}
-  return [
-    { date:'2026-01-13', store:'iOS', market:'Eng Markets', elements:'Screenshots',    version:'', status:'Live', notes:'Brand screenshot set — first experiment launch' },
-    { date:'2026-02-05', store:'iOS', market:'Eng Markets', elements:'Screenshots',    version:'', status:'Live', notes:'Social proof variant screenshots' },
-    { date:'2026-02-18', store:'iOS', market:'Eng Markets', elements:'Screenshots',    version:'', status:'Live', notes:'Features-focused full screenshot revamp' },
-    { date:'2026-04-01', store:'iOS', market:'All Markets', elements:'Keywords Field', version:'', status:'Live', notes:'Q2 keyword field refresh' },
-    { date:'2026-04-14', store:'iOS', market:'Eng Markets', elements:'Screenshots',    version:'', status:'Live', notes:'Social proof non-App UI variant' },
-    { date:'2026-05-01', store:'iOS', market:'Eng Markets', elements:'Screenshots',    version:'', status:'Live', notes:'Rebrand — openness concept' }
-  ];
-}
-function metaSave(rows) { try { localStorage.setItem(_META_KEY, JSON.stringify(rows)); } catch(e) {} }
-
-function metaRender() {
-  var tbody = document.getElementById('meta-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = metaGetData().map(function(r,i){ return metaRowHtml(r,i); }).join('');
-}
-
-function metaRowHtml(r, i) {
-  function sel(opts, val) {
-    return opts.map(function(s){ return '<option value="'+s+'"'+(val===s?' selected':'')+'>'+s+'</option>'; }).join('');
-  }
-  return '<tr class="exp-tr" id="meta-row-'+i+'">' +
-    '<td class="exp-td"><input type="date" class="exp-date" value="'+_escExpA(r.date||'')+'" onchange="metaField('+i+',\'date\',this.value)" /></td>' +
-    '<td class="exp-td"><select class="exp-select" onchange="metaField('+i+',\'store\',this.value)">'+sel(META_STORES,r.store||'iOS')+'</select></td>' +
-    '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.market||'')+'" onchange="metaField('+i+',\'market\',this.value)" /></td>' +
-    '<td class="exp-td"><input class="exp-cell exp-cell-wide" value="'+_escExpA(r.elements||'')+'" onchange="metaField('+i+',\'elements\',this.value)" /></td>' +
-    '<td class="exp-td"><input class="exp-cell" style="width:80px" value="'+_escExpA(r.version||'')+'" onchange="metaField('+i+',\'version\',this.value)" /></td>' +
-    '<td class="exp-td"><select class="exp-select" onchange="metaField('+i+',\'status\',this.value)">'+sel(META_STATUSES,r.status||'Live')+'</select></td>' +
-    '<td class="exp-td"><textarea class="exp-hyp" onchange="metaField('+i+',\'notes\',this.value)" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'">'+_escExpA(r.notes||'')+'</textarea></td>' +
-    '<td class="exp-td"><button class="exp-del" onclick="metaDelRow('+i+')" title="Delete">✕</button></td>' +
-  '</tr>';
-}
-
-function metaField(i, f, v) { var d=metaGetData(); if(d[i]){d[i][f]=v; metaSave(d);} }
-function metaAddRow() {
-  var d=metaGetData();
-  d.push({ date:'', store:'iOS', market:'', elements:'', version:'', status:'Live', notes:'' });
-  metaSave(d); metaRender();
-}
-function metaDelRow(i) {
-  if(!confirm('Delete this row?')) return;
-  var d=metaGetData(); d.splice(i,1); metaSave(d); metaRender();
-}
-function metaExport() {
-  var json=JSON.stringify(metaGetData(),null,2);
-  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(json).then(function(){_expToast('Metadata JSON copied');}).catch(function(){_expFallbackCopy(json);});
-  else _expFallbackCopy(json);
-}
-function metaImport() {
-  var json=prompt('Paste metadata JSON:'); if(!json) return;
-  try { var d=JSON.parse(json); if(!Array.isArray(d)) throw new Error('Not an array'); metaSave(d); metaRender(); _expToast('Imported '+d.length+' rows'); }
-  catch(e) { alert('Invalid JSON: '+e.message); }
-}
-
-/* ── Rank Tracker ─────────────────────────────────────────────────────── */
-
-function rankGetData() {
-  try { var r = localStorage.getItem(_RANK_KEY); if (r) return JSON.parse(r); } catch(e) {}
-  return [];
-}
-function rankSave(rows) { try { localStorage.setItem(_RANK_KEY, JSON.stringify(rows)); } catch(e) {} }
-
-function _rankChangeClass(v) {
-  if (!v) return '';
-  var t = v.trim();
-  if (t.charAt(0) === '▲' || t.charAt(0) === '+') return 'rank-change-up';
-  if (t.charAt(0) === '▼' || t.charAt(0) === '-') return 'rank-change-down';
-  return '';
-}
-
-function rankRender() {
-  var tbody = document.getElementById('rank-tbody');
-  if (!tbody) return;
-  var rows = rankGetData();
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#94a3b8;font-size:.8rem">No rank snapshots yet — click + Add Row to start tracking</td></tr>';
-    return;
-  }
-  tbody.innerHTML = rows.map(function(r,i){ return rankRowHtml(r,i); }).join('');
-  var hyps = tbody.querySelectorAll('.exp-hyp');
-  for (var j=0; j<hyps.length; j++) { hyps[j].style.height='auto'; hyps[j].style.height=hyps[j].scrollHeight+'px'; }
-}
-
-function rankRowHtml(r, i) {
-  function sel(opts, val) {
-    return opts.map(function(s){ return '<option value="'+s+'"'+(val===s?' selected':'')+'>'+s+'</option>'; }).join('');
-  }
-  var cc = _rankChangeClass(r.change||'');
-  return '<tr class="exp-tr" id="rank-row-'+i+'">' +
-    '<td class="exp-td"><input type="date" class="exp-date" value="'+_escExpA(r.date||'')+'" onchange="rankField('+i+',\'date\',this.value)" /></td>' +
-    '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.keyword||'')+'" onchange="rankField('+i+',\'keyword\',this.value)" /></td>' +
-    '<td class="exp-td"><input class="exp-cell" value="'+_escExpA(r.market||'')+'" onchange="rankField('+i+',\'market\',this.value)" /></td>' +
-    '<td class="exp-td"><select class="exp-select" onchange="rankField('+i+',\'store\',this.value)">'+sel(RANK_STORES,r.store||'iOS')+'</select></td>' +
-    '<td class="exp-td"><input class="exp-cell" style="width:60px;text-align:center" value="'+_escExpA(r.rank||'')+'" onchange="rankField('+i+',\'rank\',this.value)" /></td>' +
-    '<td class="exp-td '+cc+'"><input class="exp-cell" style="width:70px;text-align:center" value="'+_escExpA(r.change||'')+'" onchange="rankField('+i+',\'change\',this.value);rankUpdateChangeColor('+i+',this.value)" /></td>' +
-    '<td class="exp-td"><input class="exp-cell" style="width:80px;text-align:center" value="'+_escExpA(r.volume||'')+'" onchange="rankField('+i+',\'volume\',this.value)" /></td>' +
-    '<td class="exp-td"><textarea class="exp-hyp" onchange="rankField('+i+',\'notes\',this.value)" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'">'+_escExpA(r.notes||'')+'</textarea></td>' +
-    '<td class="exp-td"><button class="exp-del" onclick="rankDelRow('+i+')" title="Delete">✕</button></td>' +
-  '</tr>';
-}
-
-function rankUpdateChangeColor(i, val) {
-  var tr = document.getElementById('rank-row-'+i);
-  if (!tr) return;
-  var td = tr.querySelectorAll('td')[5];
-  if (!td) return;
-  td.classList.remove('rank-change-up','rank-change-down');
-  var cls = _rankChangeClass(val);
-  if (cls) td.classList.add(cls);
-}
-
-function rankField(i, f, v) { var d=rankGetData(); if(d[i]){d[i][f]=v; rankSave(d);} }
-function rankAddRow() {
-  var d=rankGetData();
-  d.push({ date:'', keyword:'', market:'', store:'iOS', rank:'', change:'', volume:'', notes:'' });
-  rankSave(d); rankRender();
-}
-function rankDelRow(i) {
-  if(!confirm('Delete this row?')) return;
-  var d=rankGetData(); d.splice(i,1); rankSave(d); rankRender();
-}
-function rankExport() {
-  var json=JSON.stringify(rankGetData(),null,2);
-  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(json).then(function(){_expToast('Ranks JSON copied');}).catch(function(){_expFallbackCopy(json);});
-  else _expFallbackCopy(json);
-}
-function rankImport() {
-  var json=prompt('Paste ranks JSON:'); if(!json) return;
-  try { var d=JSON.parse(json); if(!Array.isArray(d)) throw new Error('Not an array'); rankSave(d); rankRender(); _expToast('Imported '+d.length+' rows'); }
-  catch(e) { alert('Invalid JSON: '+e.message); }
-}
-
-function renderMetadata() {
-  metaRender();
-  rankRender();
-}
-
+function renderMetadata() {}
 </script>
 </body>
 </html>
