@@ -850,9 +850,11 @@ function renderInsightCards(data, territory, source, agg) {
   if (granularity === 'monthly') {
     var sortedMos    = Object.keys(agg.months).sort();
     var completeMos  = sortedMos.filter(function(mo){ return agg.months[mo].days >= agg.months[mo].daysInMonth; });
-    if (!completeMos.length) { el.innerHTML = ''; return; }
-    var latestMo = completeMos[completeMos.length - 1];
-    var prevMo   = completeMos.length >= 2 ? completeMos[completeMos.length - 2] : null;
+    if (!sortedMos.length) { el.innerHTML = ''; return; }
+    var latestMo   = sortedMos[sortedMos.length - 1];
+    var isPartial  = agg.months[latestMo].days < agg.months[latestMo].daysInMonth;
+    var priorComplete = completeMos.filter(function(mo){ return mo < latestMo; });
+    var prevMo     = priorComplete.length ? priorComplete[priorComplete.length - 1] : null;
     latestB      = agg.months[latestMo];
     prevB        = prevMo ? agg.months[prevMo] : null;
     latestCVR    = calcCVR(latestB);
@@ -862,7 +864,7 @@ function renderInsightCards(data, territory, source, agg) {
     cardLabel    = 'Latest Month CVR';
     changeLabel  = 'MoM CVR Change';
     periodLabel  = 'MoM';
-    cvrSub       = fmtMonth(latestMo);
+    cvrSub       = fmtMonth(latestMo) + (isPartial ? ' (partial)' : '');
 
   } else if (granularity === 'quarterly') {
     var sortedQtrs   = Object.keys(agg.quarters).sort();
