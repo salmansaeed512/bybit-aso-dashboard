@@ -1088,6 +1088,8 @@ function setStore(s) {
     if (b) b.classList.toggle('active', v === s);
   });
   _syncStoreUI();
+  refreshHeader(_activeStore === 'android' ? _memAnd : _activeStore === 'unified' ? _getStoreData('with') : _mem);
+  refreshCountryFilter(_getStoreData('with'));
   var okrSel = document.getElementById('okr-country');
   if (okrSel) okrSel._okrPopulated = false;
   initSeqFilters();
