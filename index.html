@@ -1935,10 +1935,10 @@ function renderKwRanks() {}
 function mselVals(id) {
   var panel = document.getElementById(id + '-panel');
   if (!panel) return [];
+  var all = panel.querySelectorAll('input[type=checkbox][data-val]');
   var out = [];
-  panel.querySelectorAll('input[type=checkbox][data-val]').forEach(function(cb) {
-    if (cb.checked) out.push(cb.getAttribute('data-val'));
-  });
+  all.forEach(function(cb) { if (cb.checked) out.push(cb.getAttribute('data-val')); });
+  if (out.length === all.length) return []; // all selected = same as none selected
   return out;
 }
 function mselUpdateLabel(id) {
