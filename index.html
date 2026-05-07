@@ -583,6 +583,27 @@ function toggleMetric(key) {
   renderTable();
 }
 
+/* ── State persistence ───────────────────────────────────────────────────── */
+var _SK = 'asoDash_v1';
+function _saveState() {
+  try {
+    var st = {
+      tab:        (document.querySelector('.tab-btn.active') || {}).id || 'tabn-traffic',
+      store:      _activeStore,
+      gran:       granularity,
+      adsMode:    adsMode,
+      source:     (document.getElementById('f-source') || {}).value || 'all',
+      countries:  mselVals('f-country-msel'),
+      seqCountries: mselVals('seq-country-msel'),
+      kwMarket:   (document.getElementById('kwr-market') || {}).value || ''
+    };
+    localStorage.setItem(_SK, JSON.stringify(st));
+  } catch(e) {}
+}
+function _loadState() {
+  try { return JSON.parse(localStorage.getItem(_SK)) || {}; } catch(e) { return {}; }
+}
+
 function setTab(tab) {
   ['traffic','keywords','seq','okr','experiments','metadata','kwranks'].forEach(function(t){
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
@@ -593,6 +614,7 @@ function setTab(tab) {
   if(tab==='experiments') expRender();
   if(tab==='metadata') renderMetadata();
   if(tab==='kwranks') { initKwRanksDropdown(); renderKwRanks(); }
+  _saveState();
 }
 
 function setGranularity(g) {
@@ -602,6 +624,7 @@ function setGranularity(g) {
   document.getElementById('gt-quarterly').classList.toggle('active', g === 'quarterly');
   document.getElementById('gt-yearly').classList.toggle('active',    g === 'yearly');
   renderTable();
+  _saveState();
 }
 
 function utcDate(s) { var p=s.split('-'); return new Date(Date.UTC(+p[0],+p[1]-1,+p[2])); }
@@ -1166,6 +1189,7 @@ function setStore(s) {
   if (kwSel) { kwSel.value = ''; document.getElementById('kw-date').innerHTML = ''; initKwCountryFilter(); }
   if (document.getElementById('tabn-keywords') && document.getElementById('tabn-keywords').classList.contains('active')) renderKeywords();
   if (document.getElementById('tabn-metadata') && document.getElementById('tabn-metadata').classList.contains('active')) renderMetadata();
+  _saveState();
 }
 
 
@@ -1174,6 +1198,7 @@ function setAdsMode(m) {
   document.getElementById('am-with').classList.toggle('active',    m === 'with');
   document.getElementById('am-without').classList.toggle('active', m === 'without');
   renderTable();
+  _saveState();
 }
 
 function renderTable() {
@@ -1687,11 +1712,85 @@ function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) 
 }
 
 (function(){
-  refreshCountryFilter(_mem);
-  refreshHeader(_mem);
-  renderTable();
+  /* ── Restore persisted state ─────────────────────────────────────── */
+  var _st = _loadState();
+
+  // Store (iOS / Android / Unified)
+  if (_st.store && ['ios','android','unified'].indexOf(_st.store) !== -1) {
+    _activeStore = _st.store;
+    ['ios','android','unified'].forEach(function(v) {
+      var b = document.getElementById('store-'+v);
+      if (b) b.classList.toggle('active', v === _st.store);
+    });
+    _syncStoreUI();
+  }
+
+  // Ads mode
+  if (_st.adsMode && ['with','without'].indexOf(_st.adsMode) !== -1) {
+    adsMode = _st.adsMode;
+    document.getElementById('am-with').classList.toggle('active',    _st.adsMode === 'with');
+    document.getElementById('am-without').classList.toggle('active', _st.adsMode === 'without');
+  }
+
+  // Granularity
+  if (_st.gran && ['weekly','monthly','quarterly','yearly'].indexOf(_st.gran) !== -1) {
+    granularity = _st.gran;
+    ['weekly','monthly','quarterly','yearly'].forEach(function(g) {
+      document.getElementById('gt-'+g).classList.toggle('active', g === _st.gran);
+    });
+  }
+
+  // Traffic source
+  if (_st.source) {
+    var srcSel = document.getElementById('f-source');
+    if (srcSel) srcSel.value = _st.source;
+  }
+
+  // Build filters using restored store data
+  var initData = _getStoreData('with');
+  refreshCountryFilter(initData);
+  refreshHeader(_activeStore === 'android' ? _memAnd : _activeStore === 'unified' ? initData : _mem);
   initKwCountryFilter();
   initSeqFilters();
+
+  // Restore country multi-select selections (after panels are built)
+  if (_st.countries && _st.countries.length) {
+    var panel = document.getElementById('f-country-msel-panel');
+    if (panel) panel.querySelectorAll('input[data-val]').forEach(function(cb) {
+      cb.checked = _st.countries.indexOf(cb.getAttribute('data-val')) !== -1;
+    });
+    mselUpdateLabel('f-country-msel');
+  }
+  if (_st.seqCountries && _st.seqCountries.length) {
+    var spanel = document.getElementById('seq-country-msel-panel');
+    if (spanel) spanel.querySelectorAll('input[data-val]').forEach(function(cb) {
+      cb.checked = _st.seqCountries.indexOf(cb.getAttribute('data-val')) !== -1;
+    });
+    mselUpdateLabel('seq-country-msel');
+  }
+
+  renderTable();
+
+  // Restore active tab (do last so renders fire correctly)
+  var savedTab = _st.tab ? _st.tab.replace('tabn-','') : 'traffic';
+  var validTabs = ['traffic','keywords','seq','okr','experiments','metadata','kwranks'];
+  if (validTabs.indexOf(savedTab) !== -1 && savedTab !== 'traffic') {
+    setTab(savedTab);
+  }
+
+  // Restore KWR market (after initKwRanksDropdown which fires inside setTab above)
+  if (savedTab === 'kwranks' && _st.kwMarket) {
+    var kwSel = document.getElementById('kwr-market');
+    if (kwSel) { kwSel.value = _st.kwMarket; renderKwRanks(); }
+  }
+
+  /* ── Event listeners ─────────────────────────────────────────────── */
+  // Save state when source or KWR market dropdowns change
+  ['f-source','kwr-market'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', _saveState);
+  });
+
   document.getElementById('kw-wrap').addEventListener('click', function(e) {
     if (!e.target.classList.contains('kw-star')) return;
     toggleStar(e.target.getAttribute('data-country'), e.target.getAttribute('data-kw'));
@@ -2091,6 +2190,7 @@ document.addEventListener('change', function(e) {
   mselUpdateLabel(id);
   if (id === 'f-country-msel')   renderTable();
   if (id === 'seq-country-msel') renderSequential();
+  _saveState();
 });
 /* Toggle panel open/close */
 document.addEventListener('click', function(e) {
