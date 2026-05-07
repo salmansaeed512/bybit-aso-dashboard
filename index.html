@@ -173,6 +173,34 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 .msel-opt:hover{background:#f8fafc}
 .msel-opt input[type=checkbox]{margin:0;cursor:pointer;accent-color:#6366f1}
 .msel-divider{border:none;border-top:1px solid #f1f5f9;margin:3px 0}
+/* ── Keyword Ranks Tracker Tab ───────────────────────────────── */
+.kwr-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+.kwr-meta{font-size:.78rem;color:#64748b}
+.kwr-meta strong{color:#1e293b}
+.kwr-filters{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.kwr-select{font-size:.85rem;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#1e293b;cursor:pointer}
+.kwr-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.kwr-pill{padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:600}
+.kwr-pill-up{background:#dcfce7;color:#15803d}
+.kwr-pill-down{background:#fee2e2;color:#dc2626}
+.kwr-pill-new{background:#ede9fe;color:#6d28d9}
+.kwr-pill-same{background:#f1f5f9;color:#64748b}
+.kwr-table{width:100%;border-collapse:collapse;font-size:.83rem}
+.kwr-table th{background:#f8fafc;color:#475569;font-weight:600;padding:8px 12px;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap}
+.kwr-table td{padding:7px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.kwr-table tr:hover td{background:#fafafa}
+.kwr-rank{display:inline-block;min-width:36px;text-align:center;padding:2px 6px;border-radius:4px;font-weight:600;font-size:.8rem}
+.kwr-rank-top{background:#fef3c7;color:#92400e}
+.kwr-rank-good{background:#dcfce7;color:#15803d}
+.kwr-rank-mid{background:#dbeafe;color:#1e40af}
+.kwr-rank-low{background:#f1f5f9;color:#64748b}
+.kwr-rank-none{background:#f8fafc;color:#94a3b8;font-style:italic;font-weight:400}
+.kwr-change-up{color:#15803d;font-weight:700}
+.kwr-change-down{color:#dc2626;font-weight:700}
+.kwr-change-zero{color:#94a3b8}
+.kwr-badge-new{background:#ede9fe;color:#6d28d9;padding:2px 7px;border-radius:4px;font-size:.72rem;font-weight:700}
+.kwr-badge-out{background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:4px;font-size:.72rem;font-weight:700}
+
 </style>
 </head>
 <body>
@@ -489,7 +517,21 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
   </div>
 </div>
 
-<div id="tab-kwranks" class="tab-content"></div>
+<div id="tab-kwranks" class="tab-content">
+  <div class="kwr-header">
+    <div>
+      <h2 class="exp-heading">Keyword Ranks Tracker</h2>
+      <p class="exp-subtitle">iOS App Store &nbsp;·&nbsp; Metadata refresh deployed <strong>Apr 11, 2026</strong> &nbsp;·&nbsp; Comparing <strong>Apr 10 → Apr 24</strong></p>
+    </div>
+    <div class="kwr-filters">
+      <select class="kwr-select" id="kwr-market" onchange="renderKwRanks()">
+        <option value="">Select Market</option>
+      </select>
+    </div>
+  </div>
+  <div id="kwr-summary" class="kwr-summary"></div>
+  <div id="kwr-wrap"></div>
+</div>
 
 <script src="kpiConfig.js"></script>
 <script src="okr-tracker.js"></script>
@@ -1650,6 +1692,7 @@ function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) 
   renderTable();
   initKwCountryFilter();
   initSeqFilters();
+  renderKwRanks();
   document.getElementById('kw-wrap').addEventListener('click', function(e) {
     if (!e.target.classList.contains('kw-star')) return;
     toggleStar(e.target.getAttribute('data-country'), e.target.getAttribute('data-kw'));
@@ -1930,7 +1973,78 @@ function renderMetadata(){
   for(var i=0;i<tas.length;i++){tas[i].style.height='auto';tas[i].style.height=tas[i].scrollHeight+'px';}
 }
 
-function renderKwRanks() {}
+/* ── Keyword Ranks Tracker Tab ──────────────────────────────────────────── */
+var _kwRefreshData = {"Pakistan":[{"kw":"Binance","vol":71,"b":7,"a":4,"c":3},{"kw":"exness","vol":64,"b":6,"a":7,"c":-1},{"kw":"Bybit","vol":48,"b":1,"a":1,"c":0},{"kw":"Crypto","vol":43,"b":3,"a":2,"c":1},{"kw":"Bitcoin","vol":38,"b":5,"a":4,"c":1},{"kw":"Crypto Wallet","vol":34,"b":7,"a":6,"c":1},{"kw":"Trade","vol":45,"b":10,"a":9,"c":1},{"kw":"Trading","vol":55,"b":17,"a":16,"c":1},{"kw":"Stock","vol":33,"b":162,"a":11,"c":151},{"kw":"Tether","vol":38,"b":26,"a":21,"c":5},{"kw":"btc","vol":35,"b":4,"a":6,"c":-2}],"Kazakhstan":[{"kw":"Binance","vol":64,"b":2,"a":2,"c":0},{"kw":"exness","vol":64,"b":7,"a":9,"c":-2},{"kw":"Bybit","vol":63,"b":1,"a":1,"c":0},{"kw":"Crypto","vol":43,"b":2,"a":3,"c":-1},{"kw":"Bitcoin","vol":38,"b":3,"a":3,"c":0},{"kw":"Crypto Wallet","vol":42,"b":6,"a":4,"c":2},{"kw":"Trading","vol":45,"b":9,"a":5,"c":4},{"kw":"Stock","vol":5,"b":29,"a":15,"c":14},{"kw":"Crypto Exchange","vol":5,"b":2,"a":2,"c":0},{"kw":"btc","vol":3,"b":3,"a":3,"c":0}],"Sri Lanka":[{"kw":"Binance","vol":70,"b":3,"a":3,"c":0},{"kw":"exness","vol":47,"b":6,"a":6,"c":0},{"kw":"Bybit","vol":53,"b":1,"a":1,"c":0},{"kw":"Crypto","vol":35,"b":3,"a":2,"c":1},{"kw":"Bitcoin","vol":38,"b":3,"a":3,"c":0},{"kw":"Cryptocurrency","vol":42,"b":null,"a":8,"c":null,"s":"new"},{"kw":"Trust","vol":45,"b":5,"a":6,"c":-1},{"kw":"Stock","vol":27,"b":26,"a":26,"c":0},{"kw":"Crypto Exchange","vol":5,"b":2,"a":2,"c":0},{"kw":"Stake","vol":32,"b":7,"a":7,"c":0},{"kw":"OKX","vol":38,"b":3,"a":3,"c":0},{"kw":"Forex","vol":31,"b":7,"a":6,"c":1}],"Russia":[{"kw":"Bybit","vol":65,"b":1,"a":1,"c":0},{"kw":"биткоин (bitcoin)","vol":41,"b":2,"a":2,"c":0},{"kw":"p2p","vol":46,"b":1,"a":1,"c":0},{"kw":"криптокошелек (crypto wallet)","vol":45,"b":1,"a":1,"c":0},{"kw":"криптовалюты (cryptocurrencies)","vol":40,"b":1,"a":1,"c":0},{"kw":"Binance","vol":55,"b":2,"a":2,"c":0},{"kw":"Kraken","vol":51,"b":1,"a":1,"c":0},{"kw":"инвестиции (investments)","vol":54,"b":2,"a":1,"c":1},{"kw":"кошелек (wallet)","vol":66,"b":9,"a":7,"c":2},{"kw":"okx","vol":48,"b":2,"a":2,"c":0}],"Ukraine":[{"kw":"Bybit","vol":71,"b":1,"a":1,"c":0},{"kw":"crypto","vol":41,"b":3,"a":3,"c":0},{"kw":"p2p","vol":47,"b":1,"a":2,"c":-1},{"kw":"forex","vol":39,"b":13,"a":11,"c":2},{"kw":"Bitcoin","vol":36,"b":4,"a":3,"c":1},{"kw":"Trade","vol":36,"b":5,"a":4,"c":1},{"kw":"крипто кошелек (crypto wallet)","vol":58,"b":5,"a":4,"c":1},{"kw":"btc","vol":50,"b":4,"a":3,"c":1},{"kw":"кошелек (wallet)","vol":66,"b":16,"a":9,"c":7},{"kw":"binance","vol":77,"b":2,"a":2,"c":0}],"Israel":[{"kw":"Bybit","vol":54,"b":1,"a":1,"c":0},{"kw":"crypto","vol":38,"b":3,"a":2,"c":1},{"kw":"تداول (Trading)","vol":44,"b":null,"a":10,"c":null,"s":"new"},{"kw":"forex","vol":33,"b":14,"a":10,"c":4},{"kw":"Bitcoin","vol":37,"b":3,"a":3,"c":0},{"kw":"Trade","vol":36,"b":8,"a":11,"c":-3},{"kw":"USDT","vol":39,"b":4,"a":3,"c":1},{"kw":"btc","vol":27,"b":4,"a":3,"c":1},{"kw":"Crypto wallet","vol":28,"b":8,"a":7,"c":1},{"kw":"Investing","vol":46,"b":41,"a":18,"c":23},{"kw":"Tether","vol":38,"b":7,"a":10,"c":-3},{"kw":"Wallet","vol":52,"b":24,"a":17,"c":7},{"kw":"Stake","vol":44,"b":6,"a":7,"c":-1}],"Australia":[{"kw":"Bybit","vol":50,"b":1,"a":1,"c":0},{"kw":"crypto","vol":51,"b":11,"a":10,"c":1},{"kw":"Stocks","vol":53,"b":null,"a":77,"c":null,"s":"new"},{"kw":"forex","vol":45,"b":98,"a":34,"c":64},{"kw":"Bitcoin","vol":55,"b":11,"a":10,"c":1},{"kw":"Trade","vol":49,"b":24,"a":27,"c":-3},{"kw":"USDT","vol":39,"b":4,"a":3,"c":1},{"kw":"btc","vol":37,"b":8,"a":8,"c":0},{"kw":"Crypto wallet","vol":43,"b":18,"a":15,"c":3},{"kw":"Invest","vol":43,"b":112,"a":43,"c":69}],"South Korea":[{"kw":"Bybit","vol":52,"b":1,"a":1,"c":0},{"kw":"Wallet","vol":51,"b":235,"a":24,"c":211},{"kw":"Crypto","vol":49,"b":3,"a":3,"c":0},{"kw":"Bitcoin","vol":43,"b":4,"a":3,"c":1},{"kw":"Bitcoin Wallet","vol":34,"b":16,"a":15,"c":1},{"kw":"nft","vol":42,"b":12,"a":9,"c":3},{"kw":"xrp","vol":60,"b":34,"a":21,"c":13},{"kw":"btc","vol":45,"b":4,"a":3,"c":1},{"kw":"sol","vol":58,"b":null,"a":null,"c":0,"s":"unranked"},{"kw":"trading","vol":43,"b":7,"a":7,"c":0}],"India":[{"kw":"Bybit","vol":48,"b":1,"a":1,"c":0},{"kw":"Trading","vol":50,"b":68,"a":59,"c":9},{"kw":"Crypto","vol":49,"b":8,"a":6,"c":2},{"kw":"Bitcoin","vol":48,"b":11,"a":12,"c":-1},{"kw":"Trade","vol":47,"b":31,"a":35,"c":-4},{"kw":"BTC","vol":34,"b":7,"a":10,"c":-3},{"kw":"USDT","vol":32,"b":69,"a":40,"c":29},{"kw":"ETH","vol":30,"b":null,"a":16,"c":null,"s":"new"},{"kw":"XRP","vol":5,"b":18,"a":20,"c":-2},{"kw":"NFT","vol":55,"b":69,"a":40,"c":29},{"kw":"Crypto Exchange","vol":32,"b":3,"a":2,"c":1},{"kw":"Crypto Wallet","vol":43,"b":14,"a":14,"c":0},{"kw":"Forex Trading","vol":47,"b":36,"a":35,"c":1},{"kw":"Ripple","vol":28,"b":null,"a":null,"c":0,"s":"unranked"},{"kw":"Stock","vol":47,"b":null,"a":54,"c":null,"s":"new"}],"Vietnam":[{"kw":"Bybit","vol":58,"b":1,"a":1,"c":0},{"kw":"chứng khoán (stock)","vol":55,"b":36,"a":32,"c":4},{"kw":"Wallet","vol":48,"b":23,"a":16,"c":7},{"kw":"Trading","vol":49,"b":16,"a":18,"c":-2},{"kw":"sàn giao dịch (exchange)","vol":41,"b":11,"a":4,"c":7},{"kw":"trade btc","vol":31,"b":3,"a":4,"c":-2},{"kw":"Tether","vol":47,"b":34,"a":13,"c":21},{"kw":"Trade","vol":47,"b":8,"a":7,"c":1},{"kw":"Mua Bitcoin","vol":36,"b":8,"a":11,"c":-3},{"kw":"Crypto","vol":47,"b":8,"a":6,"c":2}]};
+
+function _kwrRankBadge(r) {
+  if (r === null || r === undefined) return '<span class="kwr-rank kwr-rank-none">—</span>';
+  var cls = r <= 3 ? 'kwr-rank-top' : r <= 10 ? 'kwr-rank-good' : r <= 50 ? 'kwr-rank-mid' : 'kwr-rank-low';
+  return '<span class="kwr-rank ' + cls + '">' + r + '</span>';
+}
+
+function _kwrChangeCell(row) {
+  var s = row.s || '';
+  if (s === 'new')      return '<span class="kwr-badge-new">NEW</span>';
+  if (s === 'out')      return '<span class="kwr-badge-out">OUT</span>';
+  if (s === 'unranked') return '<span class="kwr-change-zero">—</span>';
+  var c = row.c || 0;
+  if (c > 0)  return '<span class="kwr-change-up">▲ +' + c + '</span>';
+  if (c < 0)  return '<span class="kwr-change-down">▼ ' + c + '</span>';
+  return '<span class="kwr-change-zero">—</span>';
+}
+
+function renderKwRanks() {
+  var market = document.getElementById('kwr-market').value;
+  var wrap   = document.getElementById('kwr-wrap');
+  var sumEl  = document.getElementById('kwr-summary');
+
+  // Populate dropdown
+  var sel = document.getElementById('kwr-market');
+  var cur = sel.value;
+  sel.innerHTML = '<option value="">Select Market</option>';
+  Object.keys(_kwRefreshData).sort().forEach(function(m) {
+    sel.innerHTML += '<option value="' + m + '"' + (m === cur ? ' selected' : '') + '>' + m + '</option>';
+  });
+  if (cur) sel.value = cur;
+
+  if (!market) {
+    sumEl.innerHTML = '';
+    wrap.innerHTML  = '<div class="empty"><h3>Select a market to view keyword rankings</h3></div>';
+    return;
+  }
+
+  var rows = _kwRefreshData[market];
+  if (!rows) { wrap.innerHTML = '<div class="empty"><h3>No data for this market</h3></div>'; return; }
+
+  // Summary pills
+  var improved = rows.filter(function(r) { return (r.c || 0) > 0 && r.s !== 'new'; }).length;
+  var declined = rows.filter(function(r) { return (r.c || 0) < 0; }).length;
+  var newEntry = rows.filter(function(r) { return r.s === 'new'; }).length;
+  var same     = rows.filter(function(r) { return (r.c || 0) === 0 && !r.s; }).length;
+  sumEl.innerHTML =
+    '<span class="kwr-pill kwr-pill-up">▲ ' + improved + ' improved</span>' +
+    '<span class="kwr-pill kwr-pill-down">▼ ' + declined + ' declined</span>' +
+    (newEntry ? '<span class="kwr-pill kwr-pill-new">★ ' + newEntry + ' new entry</span>' : '') +
+    '<span class="kwr-pill kwr-pill-same">— ' + same + ' unchanged</span>';
+
+  // Table
+  var html = '<div style="overflow-x:auto"><table class="kwr-table"><thead><tr>' +
+    '<th>#</th><th>Keyword</th><th>Volume</th>' +
+    '<th>Rank Apr 10</th><th>Rank Apr 24</th><th>Change</th>' +
+    '</tr></thead><tbody>';
+  rows.forEach(function(r, i) {
+    html += '<tr>' +
+      '<td style="color:#94a3b8;font-size:.75rem">' + (i+1) + '</td>' +
+      '<td><strong>' + r.kw + '</strong></td>' +
+      '<td style="color:#64748b">' + (r.vol || '—') + '</td>' +
+      '<td>' + _kwrRankBadge(r.b) + '</td>' +
+      '<td>' + _kwrRankBadge(r.a) + '</td>' +
+      '<td>' + _kwrChangeCell(r) + '</td>' +
+      '</tr>';
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
 /* ── Multi-select utilities ─────────────────────────────────────────────── */
 function mselVals(id) {
   var panel = document.getElementById(id + '-panel');
