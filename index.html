@@ -584,7 +584,7 @@ function toggleMetric(key) {
 }
 
 /* ── State persistence ───────────────────────────────────────────────────── */
-var _SK = 'asoDash_v1';
+var _SK = 'asoDash_v3';
 var _initializing = false;
 function _saveState() {
   if (_initializing) return;
@@ -1782,14 +1782,20 @@ function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) 
   var savedTab = _st.tab ? _st.tab.replace('tabn-','') : 'traffic';
   var validTabs = ['traffic','keywords','seq','okr','experiments','metadata','kwranks'];
   if (validTabs.indexOf(savedTab) !== -1 && savedTab !== 'traffic') {
-    setTab(savedTab);
+    if (savedTab === 'kwranks') {
+      // _kwRefreshData is defined later in the file — only toggle CSS here.
+      // The dropdown + render are deferred to the block right after _kwRefreshData.
+      ['traffic','keywords','seq','okr','experiments','metadata','kwranks'].forEach(function(t) {
+        document.getElementById('tab-'+t).classList.toggle('active', t === 'kwranks');
+        document.getElementById('tabn-'+t).classList.toggle('active', t === 'kwranks');
+      });
+    } else {
+      setTab(savedTab);
+    }
   }
 
-  // Restore KWR market after initKwRanksDropdown (fired inside setTab above)
-  if (savedTab === 'kwranks' && _st.kwMarket) {
-    var kwSel = document.getElementById('kwr-market');
-    if (kwSel) { kwSel.value = _st.kwMarket; renderKwRanks(); }
-  }
+  // Store saved kwMarket so the post-_kwRefreshData block can use it
+  window._pendingKwMarket = (_st.kwMarket && savedTab === 'kwranks') ? _st.kwMarket : null;
 
   // All state fully restored — re-enable saving and persist the clean state once
   _initializing = false;
@@ -2084,6 +2090,20 @@ function renderMetadata(){
 
 /* ── Keyword Ranks Tracker Tab ──────────────────────────────────────────── */
 var _kwRefreshData = {"Pakistan":[{"kw":"Binance","vol":71,"b":7,"a":4,"c":3},{"kw":"exness","vol":64,"b":6,"a":7,"c":-1},{"kw":"Bybit","vol":48,"b":1,"a":1,"c":0},{"kw":"Crypto","vol":43,"b":3,"a":2,"c":1},{"kw":"Bitcoin","vol":38,"b":5,"a":4,"c":1},{"kw":"Crypto Wallet","vol":34,"b":7,"a":6,"c":1},{"kw":"Trade","vol":45,"b":10,"a":9,"c":1},{"kw":"Trading","vol":55,"b":17,"a":16,"c":1},{"kw":"Stock","vol":33,"b":162,"a":11,"c":151},{"kw":"Tether","vol":38,"b":26,"a":21,"c":5},{"kw":"btc","vol":35,"b":4,"a":6,"c":-2}],"Kazakhstan":[{"kw":"Binance","vol":64,"b":2,"a":2,"c":0},{"kw":"exness","vol":64,"b":7,"a":9,"c":-2},{"kw":"Bybit","vol":63,"b":1,"a":1,"c":0},{"kw":"Crypto","vol":43,"b":2,"a":3,"c":-1},{"kw":"Bitcoin","vol":38,"b":3,"a":3,"c":0},{"kw":"Crypto Wallet","vol":42,"b":6,"a":4,"c":2},{"kw":"Trading","vol":45,"b":9,"a":5,"c":4},{"kw":"Stock","vol":5,"b":29,"a":15,"c":14},{"kw":"Crypto Exchange","vol":5,"b":2,"a":2,"c":0},{"kw":"btc","vol":3,"b":3,"a":3,"c":0}],"Sri Lanka":[{"kw":"Binance","vol":70,"b":3,"a":3,"c":0},{"kw":"exness","vol":47,"b":6,"a":6,"c":0},{"kw":"Bybit","vol":53,"b":1,"a":1,"c":0},{"kw":"Crypto","vol":35,"b":3,"a":2,"c":1},{"kw":"Bitcoin","vol":38,"b":3,"a":3,"c":0},{"kw":"Cryptocurrency","vol":42,"b":null,"a":8,"c":null,"s":"new"},{"kw":"Trust","vol":45,"b":5,"a":6,"c":-1},{"kw":"Stock","vol":27,"b":26,"a":26,"c":0},{"kw":"Crypto Exchange","vol":5,"b":2,"a":2,"c":0},{"kw":"Stake","vol":32,"b":7,"a":7,"c":0},{"kw":"OKX","vol":38,"b":3,"a":3,"c":0},{"kw":"Forex","vol":31,"b":7,"a":6,"c":1}],"Russia":[{"kw":"Bybit","vol":65,"b":1,"a":1,"c":0},{"kw":"биткоин (bitcoin)","vol":41,"b":2,"a":2,"c":0},{"kw":"p2p","vol":46,"b":1,"a":1,"c":0},{"kw":"криптокошелек (crypto wallet)","vol":45,"b":1,"a":1,"c":0},{"kw":"криптовалюты (cryptocurrencies)","vol":40,"b":1,"a":1,"c":0},{"kw":"Binance","vol":55,"b":2,"a":2,"c":0},{"kw":"Kraken","vol":51,"b":1,"a":1,"c":0},{"kw":"инвестиции (investments)","vol":54,"b":2,"a":1,"c":1},{"kw":"кошелек (wallet)","vol":66,"b":9,"a":7,"c":2},{"kw":"okx","vol":48,"b":2,"a":2,"c":0}],"Ukraine":[{"kw":"Bybit","vol":71,"b":1,"a":1,"c":0},{"kw":"crypto","vol":41,"b":3,"a":3,"c":0},{"kw":"p2p","vol":47,"b":1,"a":2,"c":-1},{"kw":"forex","vol":39,"b":13,"a":11,"c":2},{"kw":"Bitcoin","vol":36,"b":4,"a":3,"c":1},{"kw":"Trade","vol":36,"b":5,"a":4,"c":1},{"kw":"крипто кошелек (crypto wallet)","vol":58,"b":5,"a":4,"c":1},{"kw":"btc","vol":50,"b":4,"a":3,"c":1},{"kw":"кошелек (wallet)","vol":66,"b":16,"a":9,"c":7},{"kw":"binance","vol":77,"b":2,"a":2,"c":0}],"Israel":[{"kw":"Bybit","vol":54,"b":1,"a":1,"c":0},{"kw":"crypto","vol":38,"b":3,"a":2,"c":1},{"kw":"تداول (Trading)","vol":44,"b":null,"a":10,"c":null,"s":"new"},{"kw":"forex","vol":33,"b":14,"a":10,"c":4},{"kw":"Bitcoin","vol":37,"b":3,"a":3,"c":0},{"kw":"Trade","vol":36,"b":8,"a":11,"c":-3},{"kw":"USDT","vol":39,"b":4,"a":3,"c":1},{"kw":"btc","vol":27,"b":4,"a":3,"c":1},{"kw":"Crypto wallet","vol":28,"b":8,"a":7,"c":1},{"kw":"Investing","vol":46,"b":41,"a":18,"c":23},{"kw":"Tether","vol":38,"b":7,"a":10,"c":-3},{"kw":"Wallet","vol":52,"b":24,"a":17,"c":7},{"kw":"Stake","vol":44,"b":6,"a":7,"c":-1}],"Australia":[{"kw":"Bybit","vol":50,"b":1,"a":1,"c":0},{"kw":"crypto","vol":51,"b":11,"a":10,"c":1},{"kw":"Stocks","vol":53,"b":null,"a":77,"c":null,"s":"new"},{"kw":"forex","vol":45,"b":98,"a":34,"c":64},{"kw":"Bitcoin","vol":55,"b":11,"a":10,"c":1},{"kw":"Trade","vol":49,"b":24,"a":27,"c":-3},{"kw":"USDT","vol":39,"b":4,"a":3,"c":1},{"kw":"btc","vol":37,"b":8,"a":8,"c":0},{"kw":"Crypto wallet","vol":43,"b":18,"a":15,"c":3},{"kw":"Invest","vol":43,"b":112,"a":43,"c":69}],"South Korea":[{"kw":"Bybit","vol":52,"b":1,"a":1,"c":0},{"kw":"Wallet","vol":51,"b":235,"a":24,"c":211},{"kw":"Crypto","vol":49,"b":3,"a":3,"c":0},{"kw":"Bitcoin","vol":43,"b":4,"a":3,"c":1},{"kw":"Bitcoin Wallet","vol":34,"b":16,"a":15,"c":1},{"kw":"nft","vol":42,"b":12,"a":9,"c":3},{"kw":"xrp","vol":60,"b":34,"a":21,"c":13},{"kw":"btc","vol":45,"b":4,"a":3,"c":1},{"kw":"sol","vol":58,"b":null,"a":null,"c":0,"s":"unranked"},{"kw":"trading","vol":43,"b":7,"a":7,"c":0}],"India":[{"kw":"Bybit","vol":48,"b":1,"a":1,"c":0},{"kw":"Trading","vol":50,"b":68,"a":59,"c":9},{"kw":"Crypto","vol":49,"b":8,"a":6,"c":2},{"kw":"Bitcoin","vol":48,"b":11,"a":12,"c":-1},{"kw":"Trade","vol":47,"b":31,"a":35,"c":-4},{"kw":"BTC","vol":34,"b":7,"a":10,"c":-3},{"kw":"USDT","vol":32,"b":69,"a":40,"c":29},{"kw":"ETH","vol":30,"b":null,"a":16,"c":null,"s":"new"},{"kw":"XRP","vol":5,"b":18,"a":20,"c":-2},{"kw":"NFT","vol":55,"b":69,"a":40,"c":29},{"kw":"Crypto Exchange","vol":32,"b":3,"a":2,"c":1},{"kw":"Crypto Wallet","vol":43,"b":14,"a":14,"c":0},{"kw":"Forex Trading","vol":47,"b":36,"a":35,"c":1},{"kw":"Ripple","vol":28,"b":null,"a":null,"c":0,"s":"unranked"},{"kw":"Stock","vol":47,"b":null,"a":54,"c":null,"s":"new"}],"Vietnam":[{"kw":"Bybit","vol":58,"b":1,"a":1,"c":0},{"kw":"chứng khoán (stock)","vol":55,"b":36,"a":32,"c":4},{"kw":"Wallet","vol":48,"b":23,"a":16,"c":7},{"kw":"Trading","vol":49,"b":16,"a":18,"c":-2},{"kw":"sàn giao dịch (exchange)","vol":41,"b":11,"a":4,"c":7},{"kw":"trade btc","vol":31,"b":3,"a":4,"c":-2},{"kw":"Tether","vol":47,"b":34,"a":13,"c":21},{"kw":"Trade","vol":47,"b":8,"a":7,"c":1},{"kw":"Mua Bitcoin","vol":36,"b":8,"a":11,"c":-3},{"kw":"Crypto","vol":47,"b":8,"a":6,"c":2}]};
+
+// If kwranks tab was restored during init, initialise its dropdown now that _kwRefreshData exists
+(function() {
+  var kwBtn = document.getElementById('tabn-kwranks');
+  if (kwBtn && kwBtn.classList.contains('active')) {
+    initKwRanksDropdown();
+    if (window._pendingKwMarket) {
+      var sel = document.getElementById('kwr-market');
+      if (sel) sel.value = window._pendingKwMarket;
+      window._pendingKwMarket = null;
+    }
+    renderKwRanks();
+  }
+})();
 
 function _kwrRankBadge(r) {
   if (r === null || r === undefined) return '<span class="kwr-rank kwr-rank-none">—</span>';
