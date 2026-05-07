@@ -592,7 +592,7 @@ function setTab(tab) {
   if(tab==='okr') renderOKR();
   if(tab==='experiments') expRender();
   if(tab==='metadata') renderMetadata();
-  if(tab==='kwranks') renderKwRanks();
+  if(tab==='kwranks') { initKwRanksDropdown(); renderKwRanks(); }
 }
 
 function setGranularity(g) {
@@ -1692,8 +1692,6 @@ function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) 
   renderTable();
   initKwCountryFilter();
   initSeqFilters();
-  initKwRanksDropdown();
-  renderKwRanks();
   document.getElementById('kw-wrap').addEventListener('click', function(e) {
     if (!e.target.classList.contains('kw-star')) return;
     toggleStar(e.target.getAttribute('data-country'), e.target.getAttribute('data-kw'));
@@ -1996,7 +1994,7 @@ function _kwrChangeCell(row) {
 
 function initKwRanksDropdown() {
   var sel = document.getElementById('kwr-market');
-  if (!sel) return;
+  if (!sel || sel.options.length > 1) return;
   sel.innerHTML = '<option value="">Select Market</option>';
   Object.keys(_kwRefreshData).sort().forEach(function(m) {
     var opt = document.createElement('option');
