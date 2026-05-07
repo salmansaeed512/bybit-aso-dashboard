@@ -186,8 +186,8 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 .kwr-pill-new{background:#ede9fe;color:#6d28d9}
 .kwr-pill-same{background:#f1f5f9;color:#64748b}
 .kwr-table{width:100%;border-collapse:collapse;font-size:.83rem}
-.kwr-table th{background:#f8fafc;color:#475569;font-weight:600;padding:8px 12px;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap}
-.kwr-table td{padding:7px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.kwr-table th{background:#f8fafc;color:#475569;font-weight:600;padding:8px 12px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap}
+.kwr-table td{padding:7px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle;text-align:center}
 .kwr-table tr:hover td{background:#fafafa}
 .kwr-rank{display:inline-block;min-width:36px;text-align:center;padding:2px 6px;border-radius:4px;font-weight:600;font-size:.8rem}
 .kwr-rank-top{background:#fef3c7;color:#92400e}
@@ -2036,9 +2036,9 @@ function renderKwRanks() {
     '</tr></thead><tbody>';
   rows.forEach(function(r, i) {
     html += '<tr>' +
-      '<td style="color:#94a3b8;font-size:.75rem">' + (i+1) + '</td>' +
-      '<td><strong>' + r.kw + '</strong></td>' +
-      '<td style="color:#64748b">' + (r.vol || '—') + '</td>' +
+      '<td style="color:#94a3b8;font-size:.75rem;text-align:center">' + (i+1) + '</td>' +
+      '<td style="text-align:center"><strong>' + r.kw + '</strong></td>' +
+      '<td style="color:#64748b;text-align:center">' + (r.vol || '—') + '</td>' +
       '<td>' + _kwrRankBadge(r.b) + '</td>' +
       '<td>' + _kwrRankBadge(r.a) + '</td>' +
       '<td>' + _kwrChangeCell(r) + '</td>' +
