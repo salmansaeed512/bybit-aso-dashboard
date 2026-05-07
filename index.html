@@ -585,7 +585,9 @@ function toggleMetric(key) {
 
 /* ── State persistence ───────────────────────────────────────────────────── */
 var _SK = 'asoDash_v1';
+var _initializing = false;
 function _saveState() {
+  if (_initializing) return;
   try {
     var st = {
       tab:        (document.querySelector('.tab-btn.active') || {}).id || 'tabn-traffic',
@@ -1715,6 +1717,10 @@ function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) 
   /* ── Restore persisted state ─────────────────────────────────────── */
   var _st = _loadState();
 
+  // Block _saveState from firing during init (intermediate calls would
+  // overwrite saved state before source/countries are fully restored)
+  _initializing = true;
+
   // Store (iOS / Android / Unified)
   if (_st.store && ['ios','android','unified'].indexOf(_st.store) !== -1) {
     _activeStore = _st.store;
@@ -1725,7 +1731,7 @@ function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) 
     _syncStoreUI();
   }
 
-  // Ads mode
+  // Ads mode (restore AFTER _syncStoreUI so it isn't overridden)
   if (_st.adsMode && ['with','without'].indexOf(_st.adsMode) !== -1) {
     adsMode = _st.adsMode;
     document.getElementById('am-with').classList.toggle('active',    _st.adsMode === 'with');
@@ -1740,20 +1746,21 @@ function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) 
     });
   }
 
-  // Traffic source
-  if (_st.source) {
-    var srcSel = document.getElementById('f-source');
-    if (srcSel) srcSel.value = _st.source;
-  }
-
-  // Build filters using restored store data
+  // Build country panels first (source restore depends on _updateSourceFilter
+  // having already run via _syncStoreUI, so options are correct)
   var initData = _getStoreData('with');
   refreshCountryFilter(initData);
   refreshHeader(_activeStore === 'android' ? _memAnd : _activeStore === 'unified' ? initData : _mem);
   initKwCountryFilter();
   initSeqFilters();
 
-  // Restore country multi-select selections (after panels are built)
+  // Traffic source (set after panel is built so valid option exists)
+  if (_st.source) {
+    var srcSel = document.getElementById('f-source');
+    if (srcSel) srcSel.value = _st.source;
+  }
+
+  // Restore country multi-select selections
   if (_st.countries && _st.countries.length) {
     var panel = document.getElementById('f-country-msel-panel');
     if (panel) panel.querySelectorAll('input[data-val]').forEach(function(cb) {
@@ -1771,18 +1778,22 @@ function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) 
 
   renderTable();
 
-  // Restore active tab (do last so renders fire correctly)
+  // Restore active tab
   var savedTab = _st.tab ? _st.tab.replace('tabn-','') : 'traffic';
   var validTabs = ['traffic','keywords','seq','okr','experiments','metadata','kwranks'];
   if (validTabs.indexOf(savedTab) !== -1 && savedTab !== 'traffic') {
     setTab(savedTab);
   }
 
-  // Restore KWR market (after initKwRanksDropdown which fires inside setTab above)
+  // Restore KWR market after initKwRanksDropdown (fired inside setTab above)
   if (savedTab === 'kwranks' && _st.kwMarket) {
     var kwSel = document.getElementById('kwr-market');
     if (kwSel) { kwSel.value = _st.kwMarket; renderKwRanks(); }
   }
+
+  // All state fully restored — re-enable saving and persist the clean state once
+  _initializing = false;
+  _saveState();
 
   /* ── Event listeners ─────────────────────────────────────────────── */
   // Save state when source or KWR market dropdowns change
