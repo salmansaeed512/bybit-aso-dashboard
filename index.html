@@ -1692,6 +1692,7 @@ function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) 
   renderTable();
   initKwCountryFilter();
   initSeqFilters();
+  initKwRanksDropdown();
   renderKwRanks();
   document.getElementById('kw-wrap').addEventListener('click', function(e) {
     if (!e.target.classList.contains('kw-star')) return;
@@ -1993,19 +1994,22 @@ function _kwrChangeCell(row) {
   return '<span class="kwr-change-zero">—</span>';
 }
 
+function initKwRanksDropdown() {
+  var sel = document.getElementById('kwr-market');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Select Market</option>';
+  Object.keys(_kwRefreshData).sort().forEach(function(m) {
+    var opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    sel.appendChild(opt);
+  });
+}
+
 function renderKwRanks() {
   var market = document.getElementById('kwr-market').value;
   var wrap   = document.getElementById('kwr-wrap');
   var sumEl  = document.getElementById('kwr-summary');
-
-  // Populate dropdown
-  var sel = document.getElementById('kwr-market');
-  var cur = sel.value;
-  sel.innerHTML = '<option value="">Select Market</option>';
-  Object.keys(_kwRefreshData).sort().forEach(function(m) {
-    sel.innerHTML += '<option value="' + m + '"' + (m === cur ? ' selected' : '') + '>' + m + '</option>';
-  });
-  if (cur) sel.value = cur;
 
   if (!market) {
     sumEl.innerHTML = '';
