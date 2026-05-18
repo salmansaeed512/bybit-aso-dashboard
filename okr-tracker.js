@@ -2,7 +2,6 @@
 
 var _okrPeriod     = 'Q2';
 var _okrCountry    = 'all';
-var _okrSource     = 'all';
 var _okrAdsMode    = 'with';
 var _okrStore      = 'ios';   /* 'ios' | 'android' | 'unified' */
 var _okrPacingView = 'monthly'; /* 'weekly' | 'monthly' | 'quarterly' | 'h1' */
@@ -41,10 +40,6 @@ function setOKRCountry(v) {
   renderOKRCards();
 }
 
-function setOKRSource(v) {
-  _okrSource = v;
-  renderOKRCards();
-}
 
 function setOKRAdsMode(m) {
   _okrAdsMode = m;
@@ -111,23 +106,6 @@ function _syncOKRFilterUI() {
   }
   if (cs) cs.value = _okrCountry;
 
-  /* Source dropdown — options depend on platform */
-  var ss = document.getElementById('okr-source');
-  if (ss) {
-    var srcOpts = _okrStore === 'unified'
-      ? [['all','All Channels'],['organic','Organic'],['paid','Paid']]
-      : _okrStore === 'android'
-        ? [['all','All Sources'],['search','Search'],['browse','Explore'],['appref','Ads & Referral']]
-        : [['all','All Sources'],['search','Search'],['browse','Browse'],['appref','App Referrer'],['webref','Web Referrer']];
-    var curSrc = ss.value;
-    ss.innerHTML = srcOpts.map(function(o) {
-      return '<option value="' + o[0] + '">' + o[1] + '</option>';
-    }).join('');
-    var valid = srcOpts.some(function(o) { return o[0] === curSrc; });
-    ss.value = valid ? curSrc : 'all';
-    if (!valid) _okrSource = 'all';
-  }
-
   /* Apple Ads toggle — only meaningful for iOS */
   var adsGroup = document.getElementById('fg-okr-ads-mode');
   if (adsGroup) adsGroup.style.display = (_okrStore !== 'ios') ? 'none' : '';
@@ -171,7 +149,7 @@ function renderOKRCards() {
       html += '<div class="okr-group">';
       if (label) html += '<div class="okr-group-label">' + _esc(label) + '</div>';
       members.forEach(function(kpi) {
-        html += _buildOKRCard(kpi, _okrPeriod, _okrCountry, _okrSource);
+        html += _buildOKRCard(kpi, _okrPeriod, _okrCountry, 'all');
       });
       html += '</div>';
     } else {
