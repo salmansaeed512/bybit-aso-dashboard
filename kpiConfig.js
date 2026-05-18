@@ -57,6 +57,7 @@ var KPI_DEFS = [
     id: 'search_impressions',
     group: 'improve_search_cvr',
     isLead: false,
+    informational: true,
     name: 'Search Impressions',
     description: 'Total impressions via App Store / Play Store Search',
     unit: 'count',
@@ -66,13 +67,8 @@ var KPI_DEFS = [
     byCountry: true,
     bySource: false,
     lockedSource: 'search',
-    targetMultiplier: {
-      Q2: { base: 'Q1_actual', multiplier: 1.10 },
-      Q3: { base: 'Q2_actual', multiplier: 1.15 },
-      H1: { base: 'Q1_actual', multiplier: 1.265 }
-    },
     levers: 'Keyword ranking, title / subtitle optimisation',
-    notes: 'Source locked to Search. Targets compound: Q2 = Q1 × 1.10 · Q3 = Q2 × 1.15 · H1 = Q1 × 1.265.'
+    notes: 'Reference only — lower impressions can indicate more targeted, high-intent traffic. Source locked to Search.'
   },
 
   {

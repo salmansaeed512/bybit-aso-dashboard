@@ -174,7 +174,7 @@ function _buildOKRCard(kpi, period, country, source) {
     : null;
 
   var periodLabel = OKR_PERIODS[period] ? OKR_PERIODS[period].label : period;
-  var targetStr   = target !== null ? _fmtKPI(kpi, target) : '—';
+  var targetStr   = (!kpi.informational && target !== null) ? _fmtKPI(kpi, target) : '—';
   var actualStr   = actual !== null ? _fmtKPI(kpi, actual) : 'No data yet';
 
   var colorClass = 'okr-red';
@@ -184,7 +184,12 @@ function _buildOKRCard(kpi, period, country, source) {
   }
 
   var progressHTML;
-  if (pctGoal !== null) {
+  if (kpi.informational) {
+    progressHTML =
+      '<div class="okr-progress-wrap">' +
+        '<span class="okr-pct-label okr-grey" style="font-style:italic">Reference metric — no target set</span>' +
+      '</div>';
+  } else if (pctGoal !== null) {
     var barWidth = Math.min(pctGoal, 100).toFixed(1);
     progressHTML =
       '<div class="okr-progress-wrap">' +
@@ -208,7 +213,7 @@ function _buildOKRCard(kpi, period, country, source) {
   if (_okrAdsMode === 'without') dimParts.push('⊖ Organic Only');
   var dimTag = '<div class="okr-dim-tag">' + _esc(dimParts.join(' · ')) + '</div>';
 
-  var pacingHTML = _pacingSection(kpi, period, actual, target);
+  var pacingHTML = kpi.informational ? '' : _pacingSection(kpi, period, actual, target);
 
   var notesHTML = kpi.notes
     ? '<div class="okr-notes">' + _esc(kpi.notes) + '</div>'
