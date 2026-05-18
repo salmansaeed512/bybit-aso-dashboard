@@ -78,7 +78,7 @@ function setBiasMode(m) {
 
 function _syncOKRFilterUI() {
   /* Period buttons */
-  ['Q2', 'Q3', 'H1'].forEach(function(p) {
+  ['Q1', 'Q2', 'Q3', 'H1'].forEach(function(p) {
     var b = document.getElementById('okr-period-' + p);
     if (b) b.classList.toggle('active', p === _okrPeriod);
   });
@@ -456,7 +456,7 @@ function _adjustedCountFromMem(period, country, source, field) {
 
 /* Bias events card — spans full grid width, shows current + previous period */
 function _buildBiasEventsCard(period, country) {
-  var prevMap = { Q2: 'Q1', Q3: 'Q2', H1: 'Q1' };
+  var prevMap = { Q1: 'Q4_2025', Q2: 'Q1', Q3: 'Q2', H1: 'Q1' };
   var prevPeriod = prevMap[period] || null;
 
   function _eventsSection(p) {

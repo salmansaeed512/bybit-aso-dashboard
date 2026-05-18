@@ -1,10 +1,11 @@
 /* ── Period definitions ──────────────────────────────────────── */
 /* Q1 is included so okr-tracker can compute the live baseline from the data store */
 var OKR_PERIODS = {
-  Q1: { label: 'Q1 2026', start: '2026-01-01', end: '2026-03-31' },
-  Q2: { label: 'Q2 2026', start: '2026-04-01', end: '2026-06-30' },
-  Q3: { label: 'Q3 2026', start: '2026-07-01', end: '2026-09-30' },
-  H1: { label: 'H1 2026', start: '2026-04-01', end: '2026-09-30' }
+  Q4_2025: { label: 'Q4 2025', start: '2025-10-01', end: '2025-12-31' },
+  Q1:      { label: 'Q1 2026', start: '2026-01-01', end: '2026-03-31' },
+  Q2:      { label: 'Q2 2026', start: '2026-04-01', end: '2026-06-30' },
+  Q3:      { label: 'Q3 2026', start: '2026-07-01', end: '2026-09-30' },
+  H1:      { label: 'H1 2026', start: '2026-04-01', end: '2026-09-30' }
 };
 
 /*
@@ -32,7 +33,7 @@ var KPI_DEFS = [
     description: 'CVR (Search) — Total Downloads ÷ Impressions × 100',
     unit: 'percent',
     decimals: 2,
-    applicablePeriods: ['Q2', 'Q3', 'H1'],
+    applicablePeriods: ['Q1', 'Q2', 'Q3', 'H1'],
     byCountry: true,
     bySource: false,
     lockedSource: 'search',
@@ -63,7 +64,7 @@ var KPI_DEFS = [
     unit: 'count',
     decimals: 0,
     field: 'imp',
-    applicablePeriods: ['Q2', 'Q3', 'H1'],
+    applicablePeriods: ['Q1', 'Q2', 'Q3', 'H1'],
     byCountry: true,
     bySource: false,
     lockedSource: 'search',
@@ -80,7 +81,7 @@ var KPI_DEFS = [
     unit: 'count',
     decimals: 0,
     field: 'ftd',
-    applicablePeriods: ['Q2', 'Q3', 'H1'],
+    applicablePeriods: ['Q1', 'Q2', 'Q3', 'H1'],
     byCountry: true,
     bySource: false,
     lockedSource: 'search',
@@ -102,7 +103,7 @@ var KPI_DEFS = [
     unit: 'count',
     decimals: 0,
     field: 'rdl',
-    applicablePeriods: ['Q2', 'Q3', 'H1'],
+    applicablePeriods: ['Q1', 'Q2', 'Q3', 'H1'],
     byCountry: true,
     bySource: false,
     lockedSource: 'search',
@@ -124,7 +125,7 @@ var KPI_DEFS = [
     unit: 'count',
     decimals: 0,
     field: 'total',
-    applicablePeriods: ['Q2', 'Q3', 'H1'],
+    applicablePeriods: ['Q1', 'Q2', 'Q3', 'H1'],
     byCountry: true,
     bySource: false,
     lockedSource: 'search',
@@ -144,7 +145,7 @@ var KPI_DEFS = [
     description: 'Total Downloads (First-Time + Redownloads) via Browse',
     unit: 'count',
     decimals: 0,
-    applicablePeriods: ['Q2', 'Q3', 'H1'],
+    applicablePeriods: ['Q1', 'Q2', 'Q3', 'H1'],
     byCountry: false,
     bySource: false,
 
