@@ -153,7 +153,7 @@ function renderOKRCards() {
       });
       html += '</div>';
     } else {
-      html += _buildOKRCard(members[0], _okrPeriod, _okrCountry, _okrSource);
+      html += _buildOKRCard(members[0], _okrPeriod, _okrCountry, 'all');
     }
   });
 
