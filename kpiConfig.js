@@ -1,5 +1,4 @@
 /* ── Period definitions ──────────────────────────────────────── */
-/* Q1 is included so okr-tracker can compute the live baseline from the data store */
 var OKR_PERIODS = {
   Q4_2025: { label: 'Q4 2025', start: '2025-10-01', end: '2025-12-31' },
   Q1:      { label: 'Q1 2026', start: '2026-01-01', end: '2026-03-31' },
@@ -12,14 +11,10 @@ var OKR_PERIODS = {
  * KPI_DEFS — structural config only. No hardcoded actual values.
  * Actuals are computed live from the active data store.
  *
- * Fields:
- *   group        — groups a lead + sub-metrics under one visual container
- *   groupLabel   — heading rendered above the group
- *   isLead       — true = full card; false = sub-metric card (indented, dimmed)
- *   lockedSource — ignores the source filter; always queries this source
- *   unit         — 'percent' | 'count'
- *   field        — for count KPIs: which bucket field to read ('imp','ftd','rdl','total')
- *   targetMultiplier.H1.multiplier = Q2_mult × Q3_mult (compounded off Q1)
+ * targetMultiplier bases:
+ *   Q4_2025_actual — uses Q4 2025 actuals × multiplier  → Q1 target
+ *   Q1_actual      — uses Q1 2026 actuals × multiplier  → Q2 / H1 target
+ *   Q2_actual      — uses Q2 2026 actuals × multiplier  → Q3 target
  */
 var KPI_DEFS = [
 
@@ -38,20 +33,19 @@ var KPI_DEFS = [
     bySource: false,
     lockedSource: 'search',
 
-    /* Q2 = Q1_actual × 1.10 · Q3 = Q2_actual × 1.15 · H1 = Q1_actual × 1.265 */
     targetMultiplier: {
-      Q2: { base: 'Q1_actual', multiplier: 1.10 },
-      Q3: { base: 'Q2_actual', multiplier: 1.15 },
-      H1: { base: 'Q1_actual', multiplier: 1.265 }
+      Q1: { base: 'Q4_2025_actual', multiplier: 1.10 },
+      Q2: { base: 'Q1_actual',      multiplier: 1.10 },
+      Q3: { base: 'Q2_actual',      multiplier: 1.15 },
+      H1: { base: 'Q1_actual',      multiplier: 1.265 }
     },
 
-    /* Used ONLY when the data store has no Q1 data for the selected country */
     fallbackBaseline: {
       all: { search: 3.20 }
     },
 
     levers: 'Screenshot A/B tests, metadata localisation, search keyword optimisation',
-    notes: 'CVR = (First-Time Downloads + Redownloads) ÷ Impressions × 100. Source locked to Search. Q2 = Q1 × 1.10 · Q3 = Q2 × 1.15 · H1 = Q1 × 1.265 (compounded).'
+    notes: 'CVR = (First-Time Downloads + Redownloads) ÷ Impressions × 100. Source locked to Search. Q1 = Q4 2025 × 1.10 · Q2 = Q1 × 1.10 · Q3 = Q2 × 1.15 · H1 = Q1 × 1.265 (compounded).'
   },
 
   {
@@ -86,9 +80,10 @@ var KPI_DEFS = [
     bySource: false,
     lockedSource: 'search',
     targetMultiplier: {
-      Q2: { base: 'Q1_actual', multiplier: 1.10 },
-      Q3: { base: 'Q2_actual', multiplier: 1.15 },
-      H1: { base: 'Q1_actual', multiplier: 1.265 }
+      Q1: { base: 'Q4_2025_actual', multiplier: 1.10 },
+      Q2: { base: 'Q1_actual',      multiplier: 1.10 },
+      Q3: { base: 'Q2_actual',      multiplier: 1.15 },
+      H1: { base: 'Q1_actual',      multiplier: 1.265 }
     },
     levers: 'CVR improvements, keyword visibility',
     notes: 'Source locked to Search.'
@@ -108,9 +103,10 @@ var KPI_DEFS = [
     bySource: false,
     lockedSource: 'search',
     targetMultiplier: {
-      Q2: { base: 'Q1_actual', multiplier: 1.10 },
-      Q3: { base: 'Q2_actual', multiplier: 1.15 },
-      H1: { base: 'Q1_actual', multiplier: 1.265 }
+      Q1: { base: 'Q4_2025_actual', multiplier: 1.10 },
+      Q2: { base: 'Q1_actual',      multiplier: 1.10 },
+      Q3: { base: 'Q2_actual',      multiplier: 1.15 },
+      H1: { base: 'Q1_actual',      multiplier: 1.265 }
     },
     levers: 'Re-engagement campaigns, seasonal moments',
     notes: 'Source locked to Search.'
@@ -130,9 +126,10 @@ var KPI_DEFS = [
     bySource: false,
     lockedSource: 'search',
     targetMultiplier: {
-      Q2: { base: 'Q1_actual', multiplier: 1.10 },
-      Q3: { base: 'Q2_actual', multiplier: 1.15 },
-      H1: { base: 'Q1_actual', multiplier: 1.265 }
+      Q1: { base: 'Q4_2025_actual', multiplier: 1.10 },
+      Q2: { base: 'Q1_actual',      multiplier: 1.10 },
+      Q3: { base: 'Q2_actual',      multiplier: 1.15 },
+      H1: { base: 'Q1_actual',      multiplier: 1.265 }
     },
     levers: 'CVR + impression volume combined',
     notes: 'Total Downloads = First-Time Downloads + Redownloads. Source locked to Search.'
@@ -149,14 +146,14 @@ var KPI_DEFS = [
     byCountry: false,
     bySource: false,
 
-    /* Q2 = Q1_actual × 1.10 · Q3 = Q2_actual × 1.15 · H1 = Q1_actual × 1.265 */
     targetMultiplier: {
-      Q2: { base: 'Q1_actual', multiplier: 1.10 },
-      Q3: { base: 'Q2_actual', multiplier: 1.15 },
-      H1: { base: 'Q1_actual', multiplier: 1.265 }
+      Q1: { base: 'Q4_2025_actual', multiplier: 1.10 },
+      Q2: { base: 'Q1_actual',      multiplier: 1.10 },
+      Q3: { base: 'Q2_actual',      multiplier: 1.15 },
+      H1: { base: 'Q1_actual',      multiplier: 1.265 }
     },
 
     levers: 'In-App Events (seasonal/product launches), Finance Category Top 10 ranking, Editorial features',
-    notes: 'Source locked to Browse. Q2 = Q1 × 1.10 · Q3 = Q2 × 1.15 · H1 = Q1 × 1.265 (compounded).'
+    notes: 'Source locked to Browse. Q1 = Q4 2025 × 1.10 · Q2 = Q1 × 1.10 · Q3 = Q2 × 1.15 · H1 = Q1 × 1.265 (compounded).'
   }
 ];

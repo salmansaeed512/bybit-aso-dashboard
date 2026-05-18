@@ -525,7 +525,9 @@ function _getKPITarget(kpi, period, country, source) {
     var tm   = kpi.targetMultiplier[period];
     var base = null;
 
-    if (tm.base === 'Q1_actual') {
+    if (tm.base === 'Q4_2025_actual') {
+      base = _getKPIActual(kpi, 'Q4_2025', country, source);
+    } else if (tm.base === 'Q1_actual') {
       base = _getKPIActual(kpi, 'Q1', country, source);
       if (base === null && kpi.fallbackBaseline) {
         base = _nestedVal(kpi.fallbackBaseline, country, source);
