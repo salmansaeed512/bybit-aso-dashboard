@@ -71,7 +71,7 @@ function setOKRPacingView(v) {
 
 function setBiasMode(m) {
   _okrBiasMode = m;
-  renderOKRCards();
+  renderOKR();
 }
 
 /* ── Filter UI sync ──────────────────────────────────────────── */
@@ -376,28 +376,28 @@ function _okrDateRange(period) {
 
 /* ── Bias detection helpers ──────────────────────────────────── */
 
-/* Returns array of {date, ftd, rdl, total, imp} for every day in period */
+/* Returns array of {date, ftd, rdl, total, imp} for every day in period.
+   Data layout: data[territory][date]['ftd_search'], ['imp_browse'], etc. */
 function _getDailyBuckets(period, country, source) {
   var dr = _okrDateRange(period);
   if (!dr) return [];
   var data = _okrData();
+  var territories = (country === 'all') ? Object.keys(data) : (data[country] ? [country] : []);
+  var srcs = (source === 'all') ? ALL_SRCS : [source];
   var result = [];
   var cur = new Date(dr.start + 'T00:00:00Z');
   var end = new Date(dr.end   + 'T00:00:00Z');
   while (cur <= end) {
     var ds = cur.toISOString().slice(0, 10);
     var b  = { date: ds, ftd: 0, rdl: 0, total: 0, imp: 0 };
-    var territories = (country === 'all') ? Object.keys(data) : [country];
     territories.forEach(function(t) {
-      if (!data[t]) return;
-      var srcs = (source === 'all') ? Object.keys(data[t]) : [source];
+      var row = data[t] && data[t][ds];
+      if (!row) return;
       srcs.forEach(function(s) {
-        var row = data[t][s] && data[t][s][ds];
-        if (!row) return;
-        b.ftd   += row.ftd   || 0;
-        b.rdl   += row.rdl   || 0;
-        b.total += row.total || 0;
-        b.imp   += row.imp   || 0;
+        b.ftd   += row['ftd_'   + s] || 0;
+        b.rdl   += row['rdl_'   + s] || 0;
+        b.total += row['total_' + s] || 0;
+        b.imp   += row['imp_'   + s] || 0;
       });
     });
     result.push(b);
@@ -454,31 +454,37 @@ function _adjustedCountFromMem(period, country, source, field) {
   return total > 0 ? total : null;
 }
 
-/* Bias events card — spans full grid width */
+/* Bias events card — spans full grid width, shows current + previous period */
 function _buildBiasEventsCard(period, country) {
-  var daily  = _getDailyBuckets(period, country, 'all');
-  var mask   = _computeBiasMask(daily);
-  var events = Object.keys(mask).sort();
-  var periodLabel = OKR_PERIODS[period] ? OKR_PERIODS[period].label : period;
+  var prevMap = { Q2: 'Q1', Q3: 'Q2', H1: 'Q1' };
+  var prevPeriod = prevMap[period] || null;
 
-  var rowsHTML = events.length ? events.map(function(date) {
-    var ev = mask[date];
-    return '<div class="okr-bias-event">' +
-      '<span class="okr-bias-date">'  + _esc(date) + '</span>' +
-      '<span class="okr-bias-val">'   + Math.round(ev.actual).toLocaleString()      + ' downloads</span>' +
-      '<span class="okr-bias-avg">7-day avg: ' + Math.round(ev.rolling_avg).toLocaleString() + '</span>' +
-      '<span class="okr-bias-ratio">' + ev.ratio.toFixed(1) + '× spike</span>' +
-    '</div>';
-  }).join('') : '<div class="okr-bias-empty">No anomalous spikes detected in ' + _esc(periodLabel) + '</div>';
+  function _eventsSection(p) {
+    var daily  = _getDailyBuckets(p, country, 'all');
+    var mask   = _computeBiasMask(daily);
+    var events = Object.keys(mask).sort();
+    var lbl    = OKR_PERIODS[p] ? OKR_PERIODS[p].label : p;
+    var rows   = events.length ? events.map(function(date) {
+      var ev = mask[date];
+      return '<div class="okr-bias-event">' +
+        '<span class="okr-bias-date">'  + _esc(date) + '</span>' +
+        '<span class="okr-bias-val">'   + Math.round(ev.actual).toLocaleString() + ' downloads</span>' +
+        '<span class="okr-bias-avg">7-day avg: ' + Math.round(ev.rolling_avg).toLocaleString() + '</span>' +
+        '<span class="okr-bias-ratio">' + ev.ratio.toFixed(1) + '× spike</span>' +
+      '</div>';
+    }).join('') : '<div class="okr-bias-empty">No anomalous spikes detected</div>';
+    return '<div class="okr-bias-section-label">' + _esc(lbl) + '</div>' + rows;
+  }
 
   var modeNote = _okrBiasMode === 'without'
     ? 'Spike days are replaced with their rolling-average values in all KPI actuals above.'
     : 'Toggle <strong>Without Bias</strong> to exclude these days from KPI actuals.';
 
   return '<div class="okr-bias-card">' +
-    '<div class="okr-bias-header">External Bias Events — ' + _esc(periodLabel) + '</div>' +
-    '<div class="okr-bias-desc">Days where total downloads (all sources) exceeded 2.5× the 7-day trailing average. May indicate external market events (e.g. macro news, viral moments).</div>' +
-    rowsHTML +
+    '<div class="okr-bias-header">External Bias Events</div>' +
+    '<div class="okr-bias-desc">Days where total downloads (all sources) exceeded 2.5× the 7-day trailing average. May indicate external market events.</div>' +
+    (prevPeriod ? _eventsSection(prevPeriod) : '') +
+    _eventsSection(period) +
     '<div class="okr-bias-note">' + modeNote + '</div>' +
   '</div>';
 }
