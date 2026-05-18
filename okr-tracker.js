@@ -134,7 +134,9 @@ function renderOKRCards() {
   if (!container) return;
 
   var activeKPIs = KPI_DEFS.filter(function(kpi) {
-    return kpi.applicablePeriods.indexOf(_okrPeriod) >= 0;
+    var periodOK = kpi.applicablePeriods.indexOf(_okrPeriod) >= 0;
+    var storeOK  = !kpi.applicableStores || kpi.applicableStores.indexOf(_okrStore) >= 0;
+    return periodOK && storeOK;
   });
 
   if (!activeKPIs.length) {
@@ -554,7 +556,7 @@ function _getKPITarget(kpi, period, country, source) {
 
 function _getKPIActual(kpi, period, country, source) {
   var adj = (_okrBiasMode === 'without');
-  if (kpi.id === 'cvr' || kpi.id === 'search_cvr') {
+  if (kpi.unit === 'percent') {
     return adj ? _adjustedCVRFromMem(period, country, source) : _cvrFromMem(period, country, source);
   }
   if (kpi.id === 'browse_downloads') {
