@@ -148,14 +148,18 @@ var KPI_DEFS = [
     description: 'Total Downloads (First-Time + Redownloads) via Browse',
     unit: 'count',
     decimals: 0,
-    applicablePeriods: ['H1'],
+    applicablePeriods: ['Q2', 'Q3', 'H1'],
     byCountry: false,
     bySource: false,
 
-    /* Fixed H1 target — a genuine config constant, not derived from historical data */
-    targets: { H1: 15000 },
+    /* Q2 = Q1_actual × 1.10 · Q3 = Q2_actual × 1.15 · H1 = Q1_actual × 1.265 */
+    targetMultiplier: {
+      Q2: { base: 'Q1_actual', multiplier: 1.10 },
+      Q3: { base: 'Q2_actual', multiplier: 1.15 },
+      H1: { base: 'Q1_actual', multiplier: 1.265 }
+    },
 
     levers: 'In-App Events (seasonal/product launches), Finance Category Top 10 ranking, Editorial features',
-    notes: 'H1 = April – September 2026. Live YTD progress shown against 15,000 target.'
+    notes: 'Source locked to Browse. Q2 = Q1 × 1.10 · Q3 = Q2 × 1.15 · H1 = Q1 × 1.265 (compounded).'
   }
 ];
