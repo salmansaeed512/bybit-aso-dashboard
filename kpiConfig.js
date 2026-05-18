@@ -34,7 +34,7 @@ var KPI_DEFS = [
     lockedSource: 'search',
 
     targetMultiplier: {
-      Q1: { base: 'Q4_2025_actual', multiplier: 1.10 },
+      Q1: { base: 'Q4_2025_actual', multiplier: 1.05 },
       Q2: { base: 'Q1_actual',      multiplier: 1.10 },
       Q3: { base: 'Q2_actual',      multiplier: 1.15 },
       H1: { base: 'Q1_actual',      multiplier: 1.265 }
@@ -80,7 +80,7 @@ var KPI_DEFS = [
     bySource: false,
     lockedSource: 'search',
     targetMultiplier: {
-      Q1: { base: 'Q4_2025_actual', multiplier: 1.10 },
+      Q1: { base: 'Q4_2025_actual', multiplier: 1.05 },
       Q2: { base: 'Q1_actual',      multiplier: 1.10 },
       Q3: { base: 'Q2_actual',      multiplier: 1.15 },
       H1: { base: 'Q1_actual',      multiplier: 1.265 }
@@ -103,7 +103,7 @@ var KPI_DEFS = [
     bySource: false,
     lockedSource: 'search',
     targetMultiplier: {
-      Q1: { base: 'Q4_2025_actual', multiplier: 1.10 },
+      Q1: { base: 'Q4_2025_actual', multiplier: 1.05 },
       Q2: { base: 'Q1_actual',      multiplier: 1.10 },
       Q3: { base: 'Q2_actual',      multiplier: 1.15 },
       H1: { base: 'Q1_actual',      multiplier: 1.265 }
@@ -126,7 +126,7 @@ var KPI_DEFS = [
     bySource: false,
     lockedSource: 'search',
     targetMultiplier: {
-      Q1: { base: 'Q4_2025_actual', multiplier: 1.10 },
+      Q1: { base: 'Q4_2025_actual', multiplier: 1.05 },
       Q2: { base: 'Q1_actual',      multiplier: 1.10 },
       Q3: { base: 'Q2_actual',      multiplier: 1.15 },
       H1: { base: 'Q1_actual',      multiplier: 1.265 }
@@ -147,7 +147,7 @@ var KPI_DEFS = [
     bySource: false,
 
     targetMultiplier: {
-      Q1: { base: 'Q4_2025_actual', multiplier: 1.10 },
+      Q1: { base: 'Q4_2025_actual', multiplier: 1.05 },
       Q2: { base: 'Q1_actual',      multiplier: 1.10 },
       Q3: { base: 'Q2_actual',      multiplier: 1.15 },
       H1: { base: 'Q1_actual',      multiplier: 1.265 }
