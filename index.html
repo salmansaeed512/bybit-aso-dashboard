@@ -112,6 +112,17 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 .okr-filters{background:#1e2a3a;border-radius:10px;padding:16px 20px;display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;margin:24px 24px 0;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .okr-filters .fg label{color:#94a3b8}
 .okr-filters select{background:#0f172a;color:#f1f5f9;border:1px solid rgba(255,255,255,.12)}
+.okr-bias-card{grid-column:1/-1;background:#1e2a3a;border:1px solid rgba(139,92,246,.3);border-radius:14px;padding:20px 24px}
+.okr-bias-header{font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:4px}
+.okr-bias-desc{font-size:11.5px;color:#64748b;margin-bottom:14px}
+.okr-bias-event{display:flex;align-items:center;gap:16px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
+.okr-bias-event:last-of-type{border-bottom:none}
+.okr-bias-date{color:#cbd5e1;font-weight:600;min-width:96px}
+.okr-bias-val{color:#f1f5f9;min-width:130px}
+.okr-bias-avg{color:#64748b;min-width:130px}
+.okr-bias-ratio{font-weight:700;color:#f59e0b}
+.okr-bias-note{margin-top:12px;font-size:11px;color:#64748b;font-style:italic}
+.okr-bias-empty{font-size:12px;color:#64748b;padding:8px 0}
 .okr-filters .mtoggle{background:rgba(255,255,255,.06)}
 .okr-filters .mtoggle button{color:#94a3b8}
 .okr-filters .mtoggle button.active{background:#F7A600;color:#1a1a2e}
@@ -452,6 +463,13 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
         <button id="okr-pacing-monthly"   class="active" style="color:#94a3b8" onclick="setOKRPacingView('monthly')">Monthly</button>
         <button id="okr-pacing-quarterly" style="color:#94a3b8" onclick="setOKRPacingView('quarterly')">Quarterly</button>
         <button id="okr-pacing-h1"        style="color:#94a3b8;display:none" onclick="setOKRPacingView('h1')">H1</button>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Bias Adjustment</label>
+      <div class="mtoggle" style="background:rgba(255,255,255,.06)">
+        <button id="okr-bias-with"    class="active" style="color:#94a3b8" onclick="setBiasMode('with')">With Bias</button>
+        <button id="okr-bias-without" style="color:#94a3b8" onclick="setBiasMode('without')">Without Bias</button>
       </div>
     </div>
     <div class="fg">

@@ -5,6 +5,7 @@ var _okrCountry    = 'all';
 var _okrAdsMode    = 'with';
 var _okrStore      = 'ios';   /* 'ios' | 'android' | 'unified' */
 var _okrPacingView = 'monthly'; /* 'weekly' | 'monthly' | 'quarterly' | 'h1' */
+var _okrBiasMode   = 'with';  /* 'with' | 'without' */
 
 /* ── Data access ─────────────────────────────────────────────── */
 
@@ -68,6 +69,11 @@ function setOKRPacingView(v) {
   renderOKRCards();
 }
 
+function setBiasMode(m) {
+  _okrBiasMode = m;
+  renderOKRCards();
+}
+
 /* ── Filter UI sync ──────────────────────────────────────────── */
 
 function _syncOKRFilterUI() {
@@ -105,6 +111,12 @@ function _syncOKRFilterUI() {
     cs._okrPopulated = true;
   }
   if (cs) cs.value = _okrCountry;
+
+  /* Bias mode buttons */
+  ['with', 'without'].forEach(function(m) {
+    var b = document.getElementById('okr-bias-' + m);
+    if (b) b.classList.toggle('active', m === _okrBiasMode);
+  });
 
   /* Apple Ads toggle — only meaningful for iOS */
   var adsGroup = document.getElementById('fg-okr-ads-mode');
@@ -157,6 +169,7 @@ function renderOKRCards() {
     }
   });
 
+  html += _buildBiasEventsCard(_okrPeriod, _okrCountry);
   container.innerHTML = html;
 }
 
@@ -361,6 +374,115 @@ function _okrDateRange(period) {
   return p ? { start: p.start, end: p.end } : null;
 }
 
+/* ── Bias detection helpers ──────────────────────────────────── */
+
+/* Returns array of {date, ftd, rdl, total, imp} for every day in period */
+function _getDailyBuckets(period, country, source) {
+  var dr = _okrDateRange(period);
+  if (!dr) return [];
+  var data = _okrData();
+  var result = [];
+  var cur = new Date(dr.start + 'T00:00:00Z');
+  var end = new Date(dr.end   + 'T00:00:00Z');
+  while (cur <= end) {
+    var ds = cur.toISOString().slice(0, 10);
+    var b  = { date: ds, ftd: 0, rdl: 0, total: 0, imp: 0 };
+    var territories = (country === 'all') ? Object.keys(data) : [country];
+    territories.forEach(function(t) {
+      if (!data[t]) return;
+      var srcs = (source === 'all') ? Object.keys(data[t]) : [source];
+      srcs.forEach(function(s) {
+        var row = data[t][s] && data[t][s][ds];
+        if (!row) return;
+        b.ftd   += row.ftd   || 0;
+        b.rdl   += row.rdl   || 0;
+        b.total += row.total || 0;
+        b.imp   += row.imp   || 0;
+      });
+    });
+    result.push(b);
+    cur = new Date(cur.getTime() + 86400000);
+  }
+  return result;
+}
+
+/* Returns {date: {rolling_avg, ratio, actual}} for days >= 2.5× 7-day trailing avg */
+function _computeBiasMask(dailyBuckets) {
+  var WINDOW    = 7;
+  var THRESHOLD = 2.5;
+  var mask = {};
+  for (var i = WINDOW; i < dailyBuckets.length; i++) {
+    var sum = 0;
+    for (var j = i - WINDOW; j < i; j++) sum += dailyBuckets[j].total;
+    var avg = sum / WINDOW;
+    if (avg > 0 && dailyBuckets[i].total >= avg * THRESHOLD) {
+      mask[dailyBuckets[i].date] = {
+        rolling_avg: avg,
+        ratio:       dailyBuckets[i].total / avg,
+        actual:      dailyBuckets[i].total
+      };
+    }
+  }
+  return mask;
+}
+
+/* Bias-adjusted CVR: excludes spike days from both numerator and denominator */
+function _adjustedCVRFromMem(period, country, source) {
+  var daily = _getDailyBuckets(period, country, source);
+  if (!daily.length) return null;
+  var mask = _computeBiasMask(daily);
+  var totalDl = 0, totalImp = 0;
+  daily.forEach(function(d) {
+    if (!mask[d.date]) { totalDl += d.total; totalImp += d.imp; }
+  });
+  return totalImp > 0 ? totalDl / totalImp * 100 : null;
+}
+
+/* Bias-adjusted count: spike days capped at their rolling average */
+function _adjustedCountFromMem(period, country, source, field) {
+  var daily = _getDailyBuckets(period, country, source);
+  if (!daily.length) return null;
+  var mask = _computeBiasMask(daily);
+  var total = 0;
+  daily.forEach(function(d) {
+    if (mask[d.date]) {
+      total += (d[field] || 0) / mask[d.date].ratio;
+    } else {
+      total += d[field] || 0;
+    }
+  });
+  return total > 0 ? total : null;
+}
+
+/* Bias events card — spans full grid width */
+function _buildBiasEventsCard(period, country) {
+  var daily  = _getDailyBuckets(period, country, 'all');
+  var mask   = _computeBiasMask(daily);
+  var events = Object.keys(mask).sort();
+  var periodLabel = OKR_PERIODS[period] ? OKR_PERIODS[period].label : period;
+
+  var rowsHTML = events.length ? events.map(function(date) {
+    var ev = mask[date];
+    return '<div class="okr-bias-event">' +
+      '<span class="okr-bias-date">'  + _esc(date) + '</span>' +
+      '<span class="okr-bias-val">'   + Math.round(ev.actual).toLocaleString()      + ' downloads</span>' +
+      '<span class="okr-bias-avg">7-day avg: ' + Math.round(ev.rolling_avg).toLocaleString() + '</span>' +
+      '<span class="okr-bias-ratio">' + ev.ratio.toFixed(1) + '× spike</span>' +
+    '</div>';
+  }).join('') : '<div class="okr-bias-empty">No anomalous spikes detected in ' + _esc(periodLabel) + '</div>';
+
+  var modeNote = _okrBiasMode === 'without'
+    ? 'Spike days are replaced with their rolling-average values in all KPI actuals above.'
+    : 'Toggle <strong>Without Bias</strong> to exclude these days from KPI actuals.';
+
+  return '<div class="okr-bias-card">' +
+    '<div class="okr-bias-header">External Bias Events — ' + _esc(periodLabel) + '</div>' +
+    '<div class="okr-bias-desc">Days where total downloads (all sources) exceeded 2.5× the 7-day trailing average. May indicate external market events (e.g. macro news, viral moments).</div>' +
+    rowsHTML +
+    '<div class="okr-bias-note">' + modeNote + '</div>' +
+  '</div>';
+}
+
 /* ── Live data resolvers ─────────────────────────────────────── */
 
 /* CVR for a period/country/source using total downloads (ftd + rdl) */
@@ -423,15 +545,15 @@ function _getKPITarget(kpi, period, country, source) {
 /* ── Actual resolution ───────────────────────────────────────── */
 
 function _getKPIActual(kpi, period, country, source) {
+  var adj = (_okrBiasMode === 'without');
   if (kpi.id === 'cvr' || kpi.id === 'search_cvr') {
-    return _cvrFromMem(period, country, source);
+    return adj ? _adjustedCVRFromMem(period, country, source) : _cvrFromMem(period, country, source);
   }
   if (kpi.id === 'browse_downloads') {
-    return _browseDownloadsFromMem(period, country);
+    return adj ? _adjustedCountFromMem(period, country, 'browse', 'total') : _browseDownloadsFromMem(period, country);
   }
-  /* Count KPIs with a field property */
   if (kpi.field) {
-    return _countFromMem(period, country, source, kpi.field);
+    return adj ? _adjustedCountFromMem(period, country, source, kpi.field) : _countFromMem(period, country, source, kpi.field);
   }
   return null;
 }
