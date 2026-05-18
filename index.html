@@ -76,6 +76,9 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 /* OKR Tracker */
 .okr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;padding:24px}
 .okr-card{background:#1e2a3a;border-radius:12px;padding:20px 22px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.okr-submetric{border-left:3px solid rgba(247,166,0,.4);opacity:.88;margin-left:0}
+.okr-group{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;border:1px solid rgba(247,166,0,.18);border-radius:14px;padding:16px 16px 12px;background:rgba(247,166,0,.03)}
+.okr-group-label{grid-column:1/-1;font-size:11px;font-weight:700;color:#F7A600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
 .okr-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:12px}
 .okr-card-name{font-size:15px;font-weight:700;color:#f1f5f9}
 .okr-card-desc{font-size:11px;color:#94a3b8;margin-top:2px}
@@ -95,6 +98,14 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 .okr-pct-label.okr-amber{color:#f59e0b}
 .okr-pct-label.okr-red  {color:#dc2626}
 .okr-pct-label.okr-grey {color:#64748b}
+.okr-pacing{background:rgba(255,255,255,.04);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:11.5px}
+.okr-pacing-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.okr-pacing-label{color:#64748b;font-weight:600}
+.okr-pacing-val{color:#cbd5e1;font-weight:500}
+.okr-pacing-status{margin-top:6px;font-size:11px;font-weight:700;padding:2px 0}
+.okr-pace-ok{color:#16a34a}
+.okr-pace-warn{color:#f59e0b}
+.okr-pace-bad{color:#dc2626}
 .okr-levers{font-size:12px;color:#94a3b8;line-height:1.6;margin-bottom:6px}
 .okr-notes{font-size:11px;color:#64748b;line-height:1.5;font-style:italic}
 .okr-empty{text-align:center;padding:60px 24px;color:#64748b;font-size:14px}
@@ -419,11 +430,28 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 <div id="tab-okr" class="tab-content">
   <div class="okr-filters filters-bar" style="margin:24px 24px 0;background:#1e2a3a">
     <div class="fg">
+      <label>Platform</label>
+      <div class="mtoggle" style="background:rgba(255,255,255,.06)">
+        <button id="okr-store-ios"     class="active" style="color:#94a3b8" onclick="setOKRStore('ios')">iOS</button>
+        <button id="okr-store-android" style="color:#94a3b8" onclick="setOKRStore('android')">Play Store</button>
+        <button id="okr-store-unified" style="color:#94a3b8" onclick="setOKRStore('unified')">Unified</button>
+      </div>
+    </div>
+    <div class="fg">
       <label>Period</label>
       <div class="mtoggle" style="background:rgba(255,255,255,.06)">
         <button id="okr-period-Q2" class="active" style="color:#94a3b8" onclick="setOKRPeriod('Q2')">Q2 2026</button>
         <button id="okr-period-Q3" style="color:#94a3b8" onclick="setOKRPeriod('Q3')">Q3 2026</button>
         <button id="okr-period-H1" style="color:#94a3b8" onclick="setOKRPeriod('H1')">H1 2026</button>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Pacing View</label>
+      <div class="mtoggle" style="background:rgba(255,255,255,.06)">
+        <button id="okr-pacing-weekly"    style="color:#94a3b8" onclick="setOKRPacingView('weekly')">Weekly</button>
+        <button id="okr-pacing-monthly"   class="active" style="color:#94a3b8" onclick="setOKRPacingView('monthly')">Monthly</button>
+        <button id="okr-pacing-quarterly" style="color:#94a3b8" onclick="setOKRPacingView('quarterly')">Quarterly</button>
+        <button id="okr-pacing-h1"        style="color:#94a3b8;display:none" onclick="setOKRPacingView('h1')">H1</button>
       </div>
     </div>
     <div class="fg">
@@ -440,11 +468,10 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
         <option value="browse">Browse</option>
         <option value="appref">App Referrer Traffic</option>
         <option value="webref">Web Referrer Traffic</option>
-        <option value="unavail">Unavailable</option>
       </select>
     </div>
     <div class="fg" id="fg-okr-ads-mode">
-      <label>Apple Ads</label>
+      <label>Apple Ads (iOS only)</label>
       <div class="mtoggle" style="background:rgba(255,255,255,.06)">
         <button id="okr-am-with"    class="active" style="color:#94a3b8" onclick="setOKRAdsMode('with')">With Apple Ads</button>
         <button id="okr-am-without" style="color:#94a3b8" onclick="setOKRAdsMode('without')">Organic Only</button>
@@ -1122,7 +1149,7 @@ function _updateSourceFilter() {
     ]
   };
   var entries = opts[_activeStore] || opts.ios;
-  ['f-source','seq-source','okr-source'].forEach(function(id) {
+  ['f-source','seq-source'].forEach(function(id) {
     var sel = document.getElementById(id);
     if (!sel) return;
     var cur = sel.value;

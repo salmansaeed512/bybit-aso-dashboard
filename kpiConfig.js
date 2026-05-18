@@ -1,5 +1,5 @@
 /* ── Period definitions ──────────────────────────────────────── */
-/* Q1 is included so okr-tracker can compute the live baseline from _mem */
+/* Q1 is included so okr-tracker can compute the live baseline from the data store */
 var OKR_PERIODS = {
   Q1: { label: 'Q1 2026', start: '2026-01-01', end: '2026-03-31' },
   Q2: { label: 'Q2 2026', start: '2026-04-01', end: '2026-06-30' },
@@ -9,58 +9,143 @@ var OKR_PERIODS = {
 
 /*
  * KPI_DEFS — structural config only. No hardcoded actual values.
- * Actuals and baselines are computed live from _mem (the same data
- * store used by Traffic Analysis and Sequential Analysis).
+ * Actuals are computed live from the active data store.
  *
- * Adding a new KPI = one entry here, zero UI changes required.
- *
- * Supported unit types: 'percent' | 'count' | 'rank' | 'score'
- *
- * Future KPIs (one entry each):
- *   { id:'impressions',   name:'Impressions',            unit:'count',   applicablePeriods:['Q2','Q3'], byCountry:true, bySource:true,  ... }
- *   { id:'ttr',           name:'TTR (Tap-Through Rate)', unit:'percent', applicablePeriods:['Q2','Q3'], byCountry:true, bySource:true,  ... }
- *   { id:'rating',        name:'App Store Rating',       unit:'score',   applicablePeriods:['Q2','Q3'], byCountry:true, bySource:false, ... }
- *   { id:'category_rank', name:'Finance Category Rank',  unit:'rank',    applicablePeriods:['Q2','Q3'], byCountry:true, bySource:false, ... }
+ * Fields:
+ *   group        — groups a lead + sub-metrics under one visual container
+ *   groupLabel   — heading rendered above the group
+ *   isLead       — true = full card; false = sub-metric card (indented, dimmed)
+ *   lockedSource — ignores the source filter; always queries this source
+ *   unit         — 'percent' | 'count'
+ *   field        — for count KPIs: which bucket field to read ('imp','ftd','rdl','total')
+ *   targetMultiplier.H1.multiplier = Q2_mult × Q3_mult (compounded off Q1)
  */
 var KPI_DEFS = [
+
+  /* ── OKR Group: Improve Search CVR ───────────────────────────── */
   {
-    id: 'cvr',
-    name: 'CVR',
-    description: 'Conversion Rate — Total Downloads ÷ Impressions',
+    id: 'search_cvr',
+    group: 'improve_search_cvr',
+    groupLabel: 'Improve Search CVR',
+    isLead: true,
+    name: 'Search CVR',
+    description: 'CVR (Search) — Total Downloads ÷ Impressions × 100',
     unit: 'percent',
     decimals: 2,
-    applicablePeriods: ['Q2', 'Q3'],
+    applicablePeriods: ['Q2', 'Q3', 'H1'],
     byCountry: true,
-    bySource: true,
+    bySource: false,
+    lockedSource: 'search',
 
-    /*
-     * Target multiplier rules — auto-calculates; never hardcode final target values.
-     * Q2 target = Q1 actual (from _mem) × 1.15
-     * Q3 target = Q2 actual (from _mem) × 1.20  (compounds off Q2, not Q1)
-     * base: 'Q1_actual' | 'Q2_actual' tells okr-tracker which period to pull from _mem.
-     */
+    /* Q2 = Q1_actual × 1.10 · Q3 = Q2_actual × 1.15 · H1 = Q1_actual × 1.265 */
     targetMultiplier: {
-      Q2: { base: 'Q1_actual', multiplier: 1.15 },
-      Q3: { base: 'Q2_actual', multiplier: 1.20 }
+      Q2: { base: 'Q1_actual', multiplier: 1.10 },
+      Q3: { base: 'Q2_actual', multiplier: 1.15 },
+      H1: { base: 'Q1_actual', multiplier: 1.265 }
     },
 
-    /*
-     * fallbackBaseline — used ONLY when _mem has no Q1 2026 data for a given
-     * country/source combo (e.g. data only starts in Q2). Live _mem always wins.
-     * INJECT REAL DATA HERE to add per-country fallbacks if needed.
-     */
+    /* Used ONLY when the data store has no Q1 data for the selected country */
     fallbackBaseline: {
-      all: { all: 2.85, search: 3.20, browse: 1.80, appref: 5.20, webref: 2.10 }
+      all: { search: 3.20 }
     },
 
-    levers: 'Screenshot A/B tests, metadata localisation, category keyword optimisation',
-    notes: 'Q2 target = Q1 actual × 1.15 · Q3 target = Q2 actual × 1.20 (compounding). Baseline sourced from live Traffic Analysis data.'
+    levers: 'Screenshot A/B tests, metadata localisation, search keyword optimisation',
+    notes: 'CVR = (First-Time Downloads + Redownloads) ÷ Impressions × 100. Source locked to Search. Q2 = Q1 × 1.10 · Q3 = Q2 × 1.15 · H1 = Q1 × 1.265 (compounded).'
   },
 
   {
+    id: 'search_impressions',
+    group: 'improve_search_cvr',
+    isLead: false,
+    name: 'Search Impressions',
+    description: 'Total impressions via App Store / Play Store Search',
+    unit: 'count',
+    decimals: 0,
+    field: 'imp',
+    applicablePeriods: ['Q2', 'Q3', 'H1'],
+    byCountry: true,
+    bySource: false,
+    lockedSource: 'search',
+    targetMultiplier: {
+      Q2: { base: 'Q1_actual', multiplier: 1.10 },
+      Q3: { base: 'Q2_actual', multiplier: 1.15 },
+      H1: { base: 'Q1_actual', multiplier: 1.265 }
+    },
+    levers: 'Keyword ranking, title / subtitle optimisation',
+    notes: 'Source locked to Search. Targets compound: Q2 = Q1 × 1.10 · Q3 = Q2 × 1.15 · H1 = Q1 × 1.265.'
+  },
+
+  {
+    id: 'search_ftd',
+    group: 'improve_search_cvr',
+    isLead: false,
+    name: 'First-Time Downloads (Search)',
+    description: 'First-Time Downloads via Search',
+    unit: 'count',
+    decimals: 0,
+    field: 'ftd',
+    applicablePeriods: ['Q2', 'Q3', 'H1'],
+    byCountry: true,
+    bySource: false,
+    lockedSource: 'search',
+    targetMultiplier: {
+      Q2: { base: 'Q1_actual', multiplier: 1.10 },
+      Q3: { base: 'Q2_actual', multiplier: 1.15 },
+      H1: { base: 'Q1_actual', multiplier: 1.265 }
+    },
+    levers: 'CVR improvements, keyword visibility',
+    notes: 'Source locked to Search.'
+  },
+
+  {
+    id: 'search_rdl',
+    group: 'improve_search_cvr',
+    isLead: false,
+    name: 'Redownloads (Search)',
+    description: 'Redownloads via Search',
+    unit: 'count',
+    decimals: 0,
+    field: 'rdl',
+    applicablePeriods: ['Q2', 'Q3', 'H1'],
+    byCountry: true,
+    bySource: false,
+    lockedSource: 'search',
+    targetMultiplier: {
+      Q2: { base: 'Q1_actual', multiplier: 1.10 },
+      Q3: { base: 'Q2_actual', multiplier: 1.15 },
+      H1: { base: 'Q1_actual', multiplier: 1.265 }
+    },
+    levers: 'Re-engagement campaigns, seasonal moments',
+    notes: 'Source locked to Search.'
+  },
+
+  {
+    id: 'search_total',
+    group: 'improve_search_cvr',
+    isLead: false,
+    name: 'Total Downloads (Search)',
+    description: 'Total Downloads (First-Time + Redownloads) via Search',
+    unit: 'count',
+    decimals: 0,
+    field: 'total',
+    applicablePeriods: ['Q2', 'Q3', 'H1'],
+    byCountry: true,
+    bySource: false,
+    lockedSource: 'search',
+    targetMultiplier: {
+      Q2: { base: 'Q1_actual', multiplier: 1.10 },
+      Q3: { base: 'Q2_actual', multiplier: 1.15 },
+      H1: { base: 'Q1_actual', multiplier: 1.265 }
+    },
+    levers: 'CVR + impression volume combined',
+    notes: 'Total Downloads = First-Time Downloads + Redownloads. Source locked to Search.'
+  },
+
+  /* ── Standalone KPI: Browse Traffic Downloads ─────────────────── */
+  {
     id: 'browse_downloads',
     name: 'Browse Traffic Downloads',
-    description: 'Total Downloads (FTD + Redownloads) via App Store Browse',
+    description: 'Total Downloads (First-Time + Redownloads) via Browse',
     unit: 'count',
     decimals: 0,
     applicablePeriods: ['H1'],
