@@ -183,6 +183,21 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 .meta2-th-field{width:130px;white-space:nowrap}.meta2-th-ver{width:110px}.meta2-th-date{width:145px}
 .meta2-td-field{white-space:nowrap;font-weight:500;color:#475569;font-size:.8rem}
 .meta2-td-shared{vertical-align:middle;text-align:center;background:rgba(99,102,241,.03);border-left:2px solid rgba(99,102,241,.15)}
+.meta2v-add-btn{background:#6366f1;color:#fff;border:none;border-radius:6px;padding:6px 16px;font-size:.82rem;font-weight:600;cursor:pointer}
+.meta2v-add-btn:hover{background:#4f46e5}
+.meta2v-block{border-radius:10px;margin-bottom:14px;border:1px solid #e2e8f0;overflow:hidden}
+.meta2v-block-live{border-color:#16a34a;box-shadow:0 0 0 1px rgba(22,163,74,.15)}
+.meta2v-block-old{opacity:.78}.meta2v-block-old:hover{opacity:1;transition:opacity .15s}
+.meta2v-block-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8fafc;cursor:pointer;user-select:none;border-bottom:1px solid #e2e8f0}
+.meta2v-block-live .meta2v-block-hdr{background:rgba(22,163,74,.06);border-bottom-color:rgba(22,163,74,.2)}
+.meta2v-hdr-text{font-size:.82rem;font-weight:600;color:#334155;flex:1}
+.meta2v-live-badge{background:#16a34a;color:#fff;font-size:.69rem;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0}
+.meta2v-tog{background:none;border:1px solid #e2e8f0;border-radius:4px;padding:2px 9px;font-size:.74rem;color:#64748b;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.meta2v-tog:hover{background:#f1f5f9}
+.meta2v-meta-row{display:flex;gap:16px;padding:12px 14px 8px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #f1f5f9}
+.meta2v-meta-cell{display:flex;flex-direction:column;gap:3px;min-width:140px}
+.meta2v-label{font-size:.71rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em}
+.meta2v-empty{padding:28px;text-align:center;color:#94a3b8;font-size:.85rem;font-style:italic}
 .meta2-ta{width:100%;resize:vertical;font-family:inherit;font-size:.78rem;padding:4px 6px;border:1px solid #e2e8f0;border-radius:4px;line-height:1.45;box-sizing:border-box;background:#fff}
 .meta2-ta:focus{outline:none;border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.15)}
 /* ── Multi-select dropdown ───────────────────────────────────── */
@@ -2101,31 +2116,137 @@ function meta2Cell(c,p,f,k,fb,isTA,taRows){
   return '<input class="exp-cell" style="width:100%;min-width:110px" '+ds+' value="'+_escExpA(val)+'" onchange="meta2Change(this)" />';
 }
 
-function meta2Table(country,platform,rows){
+/* ── Metadata version history ─────────────────────────────────── */
+
+var _META2V_PFX = 'bybit_meta2v';
+
+function meta2vKey(c,p){return _META2V_PFX+'_'+c.replace(/\W/g,'_')+'_'+p;}
+function meta2vLoad(c,p){try{return JSON.parse(localStorage.getItem(meta2vKey(c,p)))||[];}catch(e){return[];}}
+function meta2vSave(c,p,arr){try{localStorage.setItem(meta2vKey(c,p),JSON.stringify(arr));}catch(e){}}
+
+function meta2vAdd(btn){
+  var c=btn.dataset.c, p=btn.dataset.p;
+  var versions=meta2vLoad(c,p);
+  var newV={vNum:versions.length+1,newVer:'',subDate:'',liveDate:''};
+  /* Auto-carry previous version's optimised metadata into new prev fields */
+  if(versions.length>0){
+    var last=versions[versions.length-1];
+    Object.keys(last).forEach(function(k){
+      if(k.length>4&&k.slice(-4)==='_opt'){newV[k.replace('_opt','_prev')]=last[k]||'';}
+    });
+  }
+  versions.push(newV);
+  meta2vSave(c,p,versions);
+  renderMetadata();
+}
+
+function meta2vChange(el){
+  var c=el.dataset.c,p=el.dataset.p,vi=+el.dataset.vi,k=el.dataset.k;
+  var versions=meta2vLoad(c,p);
+  if(!versions[vi])return;
+  versions[vi][k]=el.value;
+  meta2vSave(c,p,versions);
+  if(k==='newVer'||k==='subDate'||k==='liveDate'){
+    var hdrEl=document.getElementById('meta2v-hdr-'+p+'-'+vi);
+    if(hdrEl)hdrEl.textContent=_meta2vHdrStr(versions[vi]);
+  }
+}
+
+function meta2vToggle(hdr){
+  var vi=hdr.dataset.vi,p=hdr.dataset.p;
+  var body=document.getElementById('meta2v-body-'+p+'-'+vi);
+  var btn=document.getElementById('meta2v-tog-'+p+'-'+vi);
+  if(!body)return;
+  var opening=body.style.display==='none';
+  body.style.display=opening?'':'none';
+  if(btn)btn.textContent=opening?'▲ Collapse':'▼ Expand';
+  if(opening){
+    var tas=body.querySelectorAll('.meta2-ta');
+    for(var i=0;i<tas.length;i++){tas[i].style.height='auto';tas[i].style.height=tas[i].scrollHeight+'px';}
+  }
+}
+
+function _meta2vHdrStr(v){
+  var ver=v.newVer?' ['+v.newVer+']':'';
+  return 'v'+v.vNum+ver+'  ·  Submitted: '+(v.subDate||'TBD')+'  ·  Live: '+(v.liveDate||'TBD');
+}
+
+function _meta2vInput(c,p,vi,k,val,isDate){
+  var ds='data-c="'+_escExpA(c)+'" data-p="'+p+'" data-vi="'+vi+'" data-k="'+k+'"';
+  if(isDate)return '<input type="date" class="exp-date" '+ds+' value="'+_escExpA(val)+'" onchange="meta2vChange(this)" />';
+  return '<input class="exp-cell" style="width:100%;min-width:110px" '+ds+' value="'+_escExpA(val)+'" onchange="meta2vChange(this)" />';
+}
+
+function _meta2vFieldCell(c,p,vi,k,val,isTA,taRows){
+  var ds='data-c="'+_escExpA(c)+'" data-p="'+p+'" data-vi="'+vi+'" data-k="'+k+'"';
+  if(isTA){
+    var r=taRows||3;
+    return '<textarea class="meta2-ta" rows="'+r+'" '+ds+' onchange="meta2vChange(this)" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'">'+_escExpA(val)+'</textarea>';
+  }
+  return '<input class="exp-cell" style="width:100%;min-width:110px" '+ds+' value="'+_escExpA(val)+'" onchange="meta2vChange(this)" />';
+}
+
+function meta2vSection(country,platform,rows){
+  var versions=meta2vLoad(country,platform);
   var src=(platform==='ios'&&_meta2Src[country])?_meta2Src[country]:{};
-  var span=rows.length;
-  var hdr='<thead><tr>'+
-    '<th class="exp-th meta2-th-field">Field</th>'+
-    '<th class="exp-th">Previous Metadata</th>'+
-    '<th class="exp-th">Optimised Metadata</th>'+
-    '<th class="exp-th meta2-th-ver">New Version</th>'+
-    '<th class="exp-th meta2-th-date">Submission Date</th>'+
-    '<th class="exp-th meta2-th-date">Live Date</th>'+
-    '</tr></thead>';
-  var bdy='<tbody>'+rows.map(function(r,i){
-    var shared=i===0
-      ? '<td class="exp-td meta2-td-shared" rowspan="'+span+'">'+meta2Cell(country,platform,'_sub','newVer','',false)+'</td>'+
-        '<td class="exp-td meta2-td-shared" rowspan="'+span+'">'+meta2Cell(country,platform,'_sub','subDate','',false)+'</td>'+
-        '<td class="exp-td meta2-td-shared" rowspan="'+span+'">'+meta2Cell(country,platform,'_sub','liveDate','',false)+'</td>'
-      : '';
-    return '<tr class="exp-tr">'+
-      '<td class="exp-td meta2-td-field">'+r.label+'</td>'+
-      '<td class="exp-td">'+meta2Cell(country,platform,r.f,'prev',src[r.pk]||'',r.ta,r.tr)+'</td>'+
-      '<td class="exp-td">'+meta2Cell(country,platform,r.f,'opt',src[r.ok]||'',r.ta,r.tr)+'</td>'+
-      shared+
-      '</tr>';
-  }).join('')+'</tbody>';
-  return '<div class="exp-table-wrap"><table class="exp-table">'+hdr+bdy+'</table></div>';
+  var cAttr='data-c="'+_escExpA(country)+'" data-p="'+platform+'"';
+  var html='<div style="margin-bottom:12px"><button class="meta2v-add-btn" '+cAttr+' onclick="meta2vAdd(this)">+ Add New Version</button></div>';
+
+  if(!versions.length){
+    return html+'<div class="meta2v-empty">No versions yet. Click "+ Add New Version" to begin tracking metadata history.</div>';
+  }
+
+  versions.slice().reverse().forEach(function(v,dispIdx){
+    var vi=v.vNum-1;
+    var isLatest=dispIdx===0;
+    var liveBadge=isLatest?' <span class="meta2v-live-badge">LIVE</span>':'';
+    var collapsed=!isLatest;
+
+    html+='<div class="meta2v-block '+(isLatest?'meta2v-block-live':'meta2v-block-old')+'">';
+
+    /* Header */
+    html+='<div class="meta2v-block-hdr" data-vi="'+vi+'" data-p="'+platform+'" onclick="meta2vToggle(this)">'
+      +'<span class="meta2v-hdr-text" id="meta2v-hdr-'+platform+'-'+vi+'">'+_escExpA(_meta2vHdrStr(v))+'</span>'
+      +liveBadge
+      +'<button class="meta2v-tog" id="meta2v-tog-'+platform+'-'+vi+'" onclick="event.stopPropagation();meta2vToggle(this.closest(\'.meta2v-block-hdr\'))">'
+      +(collapsed?'▼ Expand':'▲ Collapse')
+      +'</button></div>';
+
+    /* Collapsible body */
+    html+='<div id="meta2v-body-'+platform+'-'+vi+'"'+(collapsed?' style="display:none"':'')+'>';
+
+    /* Version / date inputs */
+    html+='<div class="meta2v-meta-row">'
+      +'<div class="meta2v-meta-cell"><span class="meta2v-label">New Version</span>'+_meta2vInput(country,platform,vi,'newVer',v.newVer||'',false)+'</div>'
+      +'<div class="meta2v-meta-cell"><span class="meta2v-label">Submission Date</span>'+_meta2vInput(country,platform,vi,'subDate',v.subDate||'',true)+'</div>'
+      +'<div class="meta2v-meta-cell"><span class="meta2v-label">Live Date</span>'+_meta2vInput(country,platform,vi,'liveDate',v.liveDate||'',true)+'</div>'
+      +'</div>';
+
+    /* Field table */
+    html+='<div class="exp-table-wrap"><table class="exp-table">'
+      +'<thead><tr>'
+      +'<th class="exp-th meta2-th-field">Field</th>'
+      +'<th class="exp-th">Previous Metadata</th>'
+      +'<th class="exp-th">Optimised Metadata</th>'
+      +'</tr></thead><tbody>';
+
+    rows.forEach(function(r){
+      var prevKey=r.f+'_prev', optKey=r.f+'_opt';
+      var prevVal=v[prevKey]!==undefined?v[prevKey]:(v.vNum===1?src[r.pk]||'':'');
+      var optVal =v[optKey] !==undefined?v[optKey] :(v.vNum===1?src[r.ok]||'':'');
+      html+='<tr class="exp-tr">'
+        +'<td class="exp-td meta2-td-field">'+r.label+'</td>'
+        +'<td class="exp-td">'+_meta2vFieldCell(country,platform,vi,prevKey,prevVal,r.ta,r.tr)+'</td>'
+        +'<td class="exp-td">'+_meta2vFieldCell(country,platform,vi,optKey, optVal, r.ta,r.tr)+'</td>'
+        +'</tr>';
+    });
+
+    html+='</tbody></table></div>';
+    html+='</div>'; /* body */
+    html+='</div>'; /* block */
+  });
+
+  return html;
 }
 
 function renderMetadata(){
@@ -2133,21 +2254,21 @@ function renderMetadata(){
   var wrap=document.getElementById('meta2-content');
   if(!country){wrap.innerHTML='<div class="empty"><h3>Select a country to view metadata</h3></div>';return;}
   var iosRows=[
-    {label:'Title',f:'title',pk:'pTitle',ok:'oTitle',ta:false},
-    {label:'Subtitle',f:'sub',pk:'pSub',ok:'oSub',ta:false},
-    {label:'Keywords Set',f:'kw',pk:'pKw',ok:'oKw',ta:true,tr:3}
+    {label:'Title',            f:'title',    pk:'pTitle',ok:'oTitle',ta:false},
+    {label:'Subtitle',         f:'sub',      pk:'pSub',  ok:'oSub',  ta:false},
+    {label:'Keywords Set',     f:'kw',       pk:'pKw',   ok:'oKw',   ta:true,tr:3}
   ];
   var andRows=[
-    {label:'Title',f:'title',pk:'',ok:'',ta:false},
+    {label:'Title',            f:'title',    pk:'',ok:'',ta:false},
     {label:'Short Description',f:'shortDesc',pk:'',ok:'',ta:false},
-    {label:'Long Description',f:'longDesc',pk:'',ok:'',ta:true,tr:4}
+    {label:'Long Description', f:'longDesc', pk:'',ok:'',ta:true,tr:4}
   ];
-  var showIos = (_activeStore === 'ios' || _activeStore === 'unified');
-  var showAnd = (_activeStore === 'android' || _activeStore === 'unified');
-  var html = '';
-  if (showIos) html += '<p class="meta2-section-title">iOS Metadata</p>'+meta2Table(country,'ios',iosRows);
-  if (showAnd) html += '<p class="meta2-section-title">Play Store Metadata</p>'+meta2Table(country,'android',andRows);
-  wrap.innerHTML = html;
+  var showIos=(_activeStore==='ios'||_activeStore==='unified');
+  var showAnd=(_activeStore==='android'||_activeStore==='unified');
+  var html='';
+  if(showIos)html+='<p class="meta2-section-title">iOS Metadata</p>'+meta2vSection(country,'ios',iosRows);
+  if(showAnd)html+='<p class="meta2-section-title">Play Store Metadata</p>'+meta2vSection(country,'android',andRows);
+  wrap.innerHTML=html;
   var tas=wrap.querySelectorAll('.meta2-ta');
   for(var i=0;i<tas.length;i++){tas[i].style.height='auto';tas[i].style.height=tas[i].scrollHeight+'px';}
 }
