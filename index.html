@@ -198,6 +198,8 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 .meta2v-meta-cell{display:flex;flex-direction:column;gap:3px;min-width:140px}
 .meta2v-label{font-size:.71rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em}
 .meta2v-empty{padding:28px;text-align:center;color:#94a3b8;font-size:.85rem;font-style:italic}
+.meta2v-prev-readonly{font-size:.78rem;color:#475569;line-height:1.5;padding:5px 7px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;white-space:pre-wrap;min-height:28px}
+.meta2v-prev-src-hdr{font-size:.72rem;font-weight:400;color:#94a3b8;font-style:italic}
 .meta2-ta{width:100%;resize:vertical;font-family:inherit;font-size:.78rem;padding:4px 6px;border:1px solid #e2e8f0;border-radius:4px;line-height:1.45;box-sizing:border-box;background:#fff}
 .meta2-ta:focus{outline:none;border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.15)}
 /* ── Multi-select dropdown ───────────────────────────────────── */
@@ -2128,13 +2130,6 @@ function meta2vAdd(btn){
   var c=btn.dataset.c, p=btn.dataset.p;
   var versions=meta2vLoad(c,p);
   var newV={vNum:versions.length+1,newVer:'',subDate:'',liveDate:''};
-  /* Auto-carry previous version's optimised metadata into new prev fields */
-  if(versions.length>0){
-    var last=versions[versions.length-1];
-    Object.keys(last).forEach(function(k){
-      if(k.length>4&&k.slice(-4)==='_opt'){newV[k.replace('_opt','_prev')]=last[k]||'';}
-    });
-  }
   versions.push(newV);
   meta2vSave(c,p,versions);
   renderMetadata();
@@ -2223,21 +2218,41 @@ function meta2vSection(country,platform,rows){
       +'</div>';
 
     /* Field table */
+    /* For v2+, "Previous" is read-only from the prior version's optimised content */
+    var prevVersion=null;
+    if(v.vNum>1){
+      for(var xi=0;xi<versions.length;xi++){if(versions[xi].vNum===v.vNum-1){prevVersion=versions[xi];break;}}
+    }
+    var prevColHdr=v.vNum>1
+      ?'Previous Metadata <span class="meta2v-prev-src-hdr">(from v'+(v.vNum-1)+(prevVersion&&prevVersion.newVer?' · '+prevVersion.newVer:'')+')</span>'
+      :'Previous Metadata';
+
     html+='<div class="exp-table-wrap"><table class="exp-table">'
       +'<thead><tr>'
       +'<th class="exp-th meta2-th-field">Field</th>'
-      +'<th class="exp-th">Previous Metadata</th>'
+      +'<th class="exp-th">'+prevColHdr+'</th>'
       +'<th class="exp-th">Optimised Metadata</th>'
       +'</tr></thead><tbody>';
 
     rows.forEach(function(r){
-      var prevKey=r.f+'_prev', optKey=r.f+'_opt';
-      var prevVal=v[prevKey]!==undefined?v[prevKey]:(v.vNum===1?src[r.pk]||'':'');
-      var optVal =v[optKey] !==undefined?v[optKey] :(v.vNum===1?src[r.ok]||'':'');
+      var optKey=r.f+'_opt';
+      var optVal=v[optKey]!==undefined?v[optKey]:(v.vNum===1?src[r.ok]||'':'');
+
+      var prevCell;
+      if(v.vNum>1){
+        /* Read-only: pulled live from previous version's optimised value */
+        var pv=prevVersion?(prevVersion[r.f+'_opt']!==undefined?prevVersion[r.f+'_opt']:src[r.ok]||''):'';
+        prevCell='<div class="meta2v-prev-readonly">'+(pv?_escExpA(pv):'<span style="color:#cbd5e1">—</span>')+'</div>';
+      } else {
+        var prevKey=r.f+'_prev';
+        var prevVal=v[prevKey]!==undefined?v[prevKey]:(src[r.pk]||'');
+        prevCell=_meta2vFieldCell(country,platform,vi,prevKey,prevVal,r.ta,r.tr);
+      }
+
       html+='<tr class="exp-tr">'
         +'<td class="exp-td meta2-td-field">'+r.label+'</td>'
-        +'<td class="exp-td">'+_meta2vFieldCell(country,platform,vi,prevKey,prevVal,r.ta,r.tr)+'</td>'
-        +'<td class="exp-td">'+_meta2vFieldCell(country,platform,vi,optKey, optVal, r.ta,r.tr)+'</td>'
+        +'<td class="exp-td">'+prevCell+'</td>'
+        +'<td class="exp-td">'+_meta2vFieldCell(country,platform,vi,optKey,optVal,r.ta,r.tr)+'</td>'
         +'</tr>';
     });
 
