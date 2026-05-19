@@ -200,6 +200,12 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 .meta2v-empty{padding:28px;text-align:center;color:#94a3b8;font-size:.85rem;font-style:italic}
 .meta2v-prev-readonly{font-size:.78rem;color:#475569;line-height:1.5;padding:5px 7px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;white-space:pre-wrap;min-height:28px}
 .meta2v-prev-src-hdr{font-size:.72rem;font-weight:400;color:#94a3b8;font-style:italic}
+.meta2-locale-tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:8px;margin-bottom:14px;border-bottom:2px solid #f1f5f9;scrollbar-width:thin}
+.meta2-locale-tab{flex-shrink:0;padding:5px 12px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;font-size:.78rem;font-weight:500;color:#64748b;cursor:pointer;white-space:nowrap}
+.meta2-locale-tab:hover{background:#f8fafc;color:#334155}
+.meta2-locale-tab.active{background:#6366f1;color:#fff;border-color:#6366f1}
+.meta2-locale-tab.meta2-locale-secondary{opacity:.75}
+.meta2-locale-sep{flex-shrink:0;width:1px;background:#e2e8f0;margin:2px 6px}
 .meta2-ta{width:100%;resize:vertical;font-family:inherit;font-size:.78rem;padding:4px 6px;border:1px solid #e2e8f0;border-radius:4px;line-height:1.45;box-sizing:border-box;background:#fff}
 .meta2-ta:focus{outline:none;border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.15)}
 /* ── Multi-select dropdown ───────────────────────────────────── */
@@ -2118,6 +2124,60 @@ function meta2Cell(c,p,f,k,fb,isTA,taRows){
   return '<input class="exp-cell" style="width:100%;min-width:110px" '+ds+' value="'+_escExpA(val)+'" onchange="meta2Change(this)" />';
 }
 
+/* ── Metadata locale tabs ─────────────────────────────────────── */
+
+var _META2_LOCALES = [
+  {code:'en-US',   label:'English (U.S.)',         primary:true},
+  {code:'ar',      label:'Arabic',                 primary:true},
+  {code:'tr',      label:'Turkish',                primary:true},
+  {code:'id',      label:'Indonesian',             primary:true},
+  {code:'ms',      label:'Malay',                  primary:true},
+  {code:'th',      label:'Thai',                   primary:true},
+  {code:'vi',      label:'Vietnamese',             primary:true},
+  {code:'uk',      label:'Ukrainian',              primary:true},
+  {code:'ru',      label:'Russian',                primary:true},
+  {code:'hi',      label:'Hindi',                  primary:true},
+  {code:'bn',      label:'Bengali',                primary:true},
+  {code:'ur',      label:'Urdu',                   primary:true},
+  {code:'zh-Hans', label:'Chinese (Simplified)',   primary:true},
+  {code:'zh-Hant', label:'Chinese (Traditional)',  primary:true},
+  {code:'ja',      label:'Japanese',               primary:true},
+  {code:'ko',      label:'Korean',                 primary:true},
+  {code:'pt-BR',   label:'Portuguese (Brazil)',    primary:true},
+  {code:'es-MX',   label:'Spanish (Mexico)',       primary:true},
+  {code:'he',      label:'Hebrew',                 primary:false},
+  {code:'ta',      label:'Tamil',                  primary:false},
+  {code:'te',      label:'Telugu',                 primary:false},
+  {code:'kn',      label:'Kannada',                primary:false},
+  {code:'ml',      label:'Malayalam',              primary:false},
+  {code:'mr',      label:'Marathi',                primary:false},
+  {code:'gu',      label:'Gujarati',               primary:false},
+  {code:'pa',      label:'Punjabi',                primary:false}
+];
+
+var _meta2ActiveLocale = 'en-US';
+
+function setMetaLocale(code){
+  _meta2ActiveLocale = code;
+  renderMetadata();
+}
+
+function _meta2LocaleTabBar(){
+  var html = '<div class="meta2-locale-tabs">';
+  var seenSep = false;
+  for(var i=0;i<_META2_LOCALES.length;i++){
+    var loc = _META2_LOCALES[i];
+    if(!seenSep && !loc.primary){
+      html += '<div class="meta2-locale-sep"></div>';
+      seenSep = true;
+    }
+    var cls = 'meta2-locale-tab' + (loc.primary ? '' : ' meta2-locale-secondary') + (_meta2ActiveLocale===loc.code ? ' active' : '');
+    html += '<button class="'+cls+'" onclick="setMetaLocale(\''+loc.code+'\')">'+loc.label+'</button>';
+  }
+  html += '</div>';
+  return html;
+}
+
 /* ── Metadata version history ─────────────────────────────────── */
 
 var _META2V_PFX = 'bybit_meta2v';
@@ -2276,6 +2336,7 @@ function renderMetadata(){
   var country=document.getElementById('meta2-country').value;
   var wrap=document.getElementById('meta2-content');
   if(!country){wrap.innerHTML='<div class="empty"><h3>Select a country to view metadata</h3></div>';return;}
+  var locKey = _meta2ActiveLocale==='en-US' ? country : '__'+_meta2ActiveLocale;
   var iosRows=[
     {label:'Title',            f:'title',    pk:'pTitle',ok:'oTitle',ta:false},
     {label:'Subtitle',         f:'sub',      pk:'pSub',  ok:'oSub',  ta:false},
@@ -2288,9 +2349,10 @@ function renderMetadata(){
   ];
   var showIos=(_activeStore==='ios'||_activeStore==='unified');
   var showAnd=(_activeStore==='android'||_activeStore==='unified');
-  var html='';
-  if(showIos)html+='<p class="meta2-section-title">iOS Metadata</p>'+meta2vSection(country,'ios',iosRows);
-  if(showAnd)html+='<p class="meta2-section-title">Play Store Metadata</p>'+meta2vSection(country,'android',andRows);
+  var tabBar=_meta2LocaleTabBar();
+  var html=tabBar;
+  if(showIos)html+='<p class="meta2-section-title">iOS Metadata</p>'+meta2vSection(locKey,'ios',iosRows);
+  if(showAnd)html+='<p class="meta2-section-title">Play Store Metadata</p>'+meta2vSection(locKey,'android',andRows);
   wrap.innerHTML=html;
   var tas=wrap.querySelectorAll('.meta2-ta');
   for(var i=0;i<tas.length;i++){tas[i].style.height='auto';tas[i].style.height=tas[i].scrollHeight+'px';}
