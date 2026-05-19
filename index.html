@@ -182,6 +182,7 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 .meta2-section-title{font-size:.9rem;font-weight:600;color:#1e293b;margin:24px 0 8px;padding-bottom:4px;border-bottom:1px solid #e2e8f0}
 .meta2-th-field{width:130px;white-space:nowrap}.meta2-th-ver{width:110px}.meta2-th-date{width:145px}
 .meta2-td-field{white-space:nowrap;font-weight:500;color:#475569;font-size:.8rem}
+.meta2-td-shared{vertical-align:middle;text-align:center;background:rgba(99,102,241,.03);border-left:2px solid rgba(99,102,241,.15)}
 .meta2-ta{width:100%;resize:vertical;font-family:inherit;font-size:.78rem;padding:4px 6px;border:1px solid #e2e8f0;border-radius:4px;line-height:1.45;box-sizing:border-box;background:#fff}
 .meta2-ta:focus{outline:none;border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.15)}
 /* ── Multi-select dropdown ───────────────────────────────────── */
@@ -2102,24 +2103,26 @@ function meta2Cell(c,p,f,k,fb,isTA,taRows){
 
 function meta2Table(country,platform,rows){
   var src=(platform==='ios'&&_meta2Src[country])?_meta2Src[country]:{};
+  var span=rows.length;
   var hdr='<thead><tr>'+
     '<th class="exp-th meta2-th-field">Field</th>'+
     '<th class="exp-th">Previous Metadata</th>'+
-    '<th class="exp-th meta2-th-ver">Release Version</th>'+
     '<th class="exp-th">Optimised Metadata</th>'+
     '<th class="exp-th meta2-th-ver">New Version</th>'+
-    '<th class="exp-th meta2-th-date">Release Submission Date</th>'+
-    '<th class="exp-th meta2-th-date">Metadata Live Date</th>'+
+    '<th class="exp-th meta2-th-date">Submission Date</th>'+
+    '<th class="exp-th meta2-th-date">Live Date</th>'+
     '</tr></thead>';
-  var bdy='<tbody>'+rows.map(function(r){
+  var bdy='<tbody>'+rows.map(function(r,i){
+    var shared=i===0
+      ? '<td class="exp-td meta2-td-shared" rowspan="'+span+'">'+meta2Cell(country,platform,'_sub','newVer','',false)+'</td>'+
+        '<td class="exp-td meta2-td-shared" rowspan="'+span+'">'+meta2Cell(country,platform,'_sub','subDate','',false)+'</td>'+
+        '<td class="exp-td meta2-td-shared" rowspan="'+span+'">'+meta2Cell(country,platform,'_sub','liveDate','',false)+'</td>'
+      : '';
     return '<tr class="exp-tr">'+
       '<td class="exp-td meta2-td-field">'+r.label+'</td>'+
       '<td class="exp-td">'+meta2Cell(country,platform,r.f,'prev',src[r.pk]||'',r.ta,r.tr)+'</td>'+
-      '<td class="exp-td">'+meta2Cell(country,platform,r.f,'relVer','',false)+'</td>'+
       '<td class="exp-td">'+meta2Cell(country,platform,r.f,'opt',src[r.ok]||'',r.ta,r.tr)+'</td>'+
-      '<td class="exp-td">'+meta2Cell(country,platform,r.f,'newVer','',false)+'</td>'+
-      '<td class="exp-td">'+meta2Cell(country,platform,r.f,'subDate','',false)+'</td>'+
-      '<td class="exp-td">'+meta2Cell(country,platform,r.f,'liveDate','',false)+'</td>'+
+      shared+
       '</tr>';
   }).join('')+'</tbody>';
   return '<div class="exp-table-wrap"><table class="exp-table">'+hdr+bdy+'</table></div>';
