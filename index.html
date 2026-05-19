@@ -555,29 +555,7 @@ th.sortable:hover{opacity:.85}.sort-arrow{margin-left:4px;font-size:10px;opacity
 </div>
 
 <div id="tab-metadata" class="tab-content">
-  <div class="filters-bar">
-    <div class="fg">
-      <label>Country</label>
-      <select id="meta2-country" onchange="renderMetadata()">
-        <option value="">Select Country</option>
-        <option value="Nigeria">Nigeria</option>
-        <option value="Sri Lanka">Sri Lanka</option>
-        <option value="Pakistan">Pakistan</option>
-        <option value="Kazakhstan">Kazakhstan</option>
-        <option value="Russia">Russia</option>
-        <option value="Ukraine">Ukraine</option>
-        <option value="Israel">Israel</option>
-        <option value="Eng (US)">Eng (US)</option>
-        <option value="Eng (AUS)">Eng (AUS)</option>
-        <option value="South Korea">South Korea</option>
-        <option value="India">India</option>
-        <option value="Vietnam">Vietnam</option>
-      </select>
-    </div>
-  </div>
-  <div id="meta2-content">
-    <div class="empty"><h3>Select a country to view metadata</h3></div>
-  </div>
+  <div id="meta2-content"></div>
 </div>
 
 <div id="tab-kwranks" class="tab-content">
@@ -2127,32 +2105,33 @@ function meta2Cell(c,p,f,k,fb,isTA,taRows){
 /* ── Metadata locale tabs ─────────────────────────────────────── */
 
 var _META2_LOCALES = [
-  {code:'en-US',   label:'English (U.S.)',         primary:true},
+  {code:'en-US',   label:'English (U.S.)',         primary:true,  defaultFrom:'Eng (US)'},
   {code:'ar',      label:'Arabic',                 primary:true},
   {code:'tr',      label:'Turkish',                primary:true},
   {code:'id',      label:'Indonesian',             primary:true},
   {code:'ms',      label:'Malay',                  primary:true},
   {code:'th',      label:'Thai',                   primary:true},
-  {code:'vi',      label:'Vietnamese',             primary:true},
-  {code:'uk',      label:'Ukrainian',              primary:true},
-  {code:'ru',      label:'Russian',                primary:true},
-  {code:'hi',      label:'Hindi',                  primary:true},
-  {code:'bn',      label:'Bengali',                primary:true},
-  {code:'ur',      label:'Urdu',                   primary:true},
+  {code:'vi',      label:'Vietnamese',             primary:true,  defaultFrom:'Vietnam'},
+  {code:'uk',      label:'Ukrainian',              primary:true,  defaultFrom:'Ukraine'},
+  {code:'ru',      label:'Russian',                primary:true,  defaultFrom:'Russia'},
+  {code:'hi',      label:'Hindi',                  primary:true,  defaultFrom:'Pakistan'},
+  {code:'bn',      label:'Bengali',                primary:true,  defaultFrom:'Pakistan'},
+  {code:'ur',      label:'Urdu',                   primary:true,  defaultFrom:'Pakistan'},
   {code:'zh-Hans', label:'Chinese (Simplified)',   primary:true},
   {code:'zh-Hant', label:'Chinese (Traditional)',  primary:true},
   {code:'ja',      label:'Japanese',               primary:true},
-  {code:'ko',      label:'Korean',                 primary:true},
+  {code:'ko',      label:'Korean',                 primary:true,  defaultFrom:'South Korea'},
   {code:'pt-BR',   label:'Portuguese (Brazil)',    primary:true},
   {code:'es-MX',   label:'Spanish (Mexico)',       primary:true},
-  {code:'he',      label:'Hebrew',                 primary:false},
-  {code:'ta',      label:'Tamil',                  primary:false},
-  {code:'te',      label:'Telugu',                 primary:false},
-  {code:'kn',      label:'Kannada',                primary:false},
-  {code:'ml',      label:'Malayalam',              primary:false},
-  {code:'mr',      label:'Marathi',                primary:false},
-  {code:'gu',      label:'Gujarati',               primary:false},
-  {code:'pa',      label:'Punjabi',                primary:false}
+  {code:'he',      label:'Hebrew',                 primary:false, defaultFrom:'Israel'},
+  {code:'ta',      label:'Tamil',                  primary:false, defaultFrom:'Pakistan'},
+  {code:'te',      label:'Telugu',                 primary:false, defaultFrom:'Pakistan'},
+  {code:'kn',      label:'Kannada',                primary:false, defaultFrom:'Pakistan'},
+  {code:'ml',      label:'Malayalam',              primary:false, defaultFrom:'Pakistan'},
+  {code:'mr',      label:'Marathi',                primary:false, defaultFrom:'Pakistan'},
+  {code:'gu',      label:'Gujarati',               primary:false, defaultFrom:'Pakistan'},
+  {code:'pa',      label:'Punjabi',                primary:false, defaultFrom:'Pakistan'},
+  {code:'si',      label:'Sinhala',                primary:false, defaultFrom:'Pakistan'}
 ];
 
 var _meta2ActiveLocale = 'en-US';
@@ -2243,7 +2222,10 @@ function _meta2vFieldCell(c,p,vi,k,val,isTA,taRows){
 
 function meta2vSection(country,platform,rows){
   var versions=meta2vLoad(country,platform);
-  var src=(platform==='ios'&&_meta2Src[country])?_meta2Src[country]:{};
+  var locDef=null;
+  for(var _li=0;_li<_META2_LOCALES.length;_li++){if(_META2_LOCALES[_li].code===_meta2ActiveLocale){locDef=_META2_LOCALES[_li];break;}}
+  var _srcKey=locDef&&locDef.defaultFrom?locDef.defaultFrom:null;
+  var src=(platform==='ios'&&_srcKey&&_meta2Src[_srcKey])?_meta2Src[_srcKey]:{};
 
   /* Auto-create v1 pre-populated from _meta2Src so there is always content */
   if(!versions.length){
@@ -2333,10 +2315,8 @@ function meta2vSection(country,platform,rows){
 }
 
 function renderMetadata(){
-  var country=document.getElementById('meta2-country').value;
   var wrap=document.getElementById('meta2-content');
-  if(!country){wrap.innerHTML='<div class="empty"><h3>Select a country to view metadata</h3></div>';return;}
-  var locKey = _meta2ActiveLocale==='en-US' ? country : '__'+_meta2ActiveLocale;
+  var locKey = '__'+_meta2ActiveLocale;
   var iosRows=[
     {label:'Title',            f:'title',    pk:'pTitle',ok:'oTitle',ta:false},
     {label:'Subtitle',         f:'sub',      pk:'pSub',  ok:'oSub',  ta:false},
