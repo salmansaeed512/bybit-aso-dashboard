@@ -2169,27 +2169,35 @@ function _meta2vHdrStr(v){
 function _meta2vInput(c,p,vi,k,val,isDate){
   var ds='data-c="'+_escExpA(c)+'" data-p="'+p+'" data-vi="'+vi+'" data-k="'+k+'"';
   if(isDate)return '<input type="date" class="exp-date" '+ds+' value="'+_escExpA(val)+'" onchange="meta2vChange(this)" />';
-  return '<input class="exp-cell" style="width:100%;min-width:110px" '+ds+' value="'+_escExpA(val)+'" onchange="meta2vChange(this)" />';
+  return '<input class="exp-cell" style="width:100%;min-width:110px" '+ds+' value="'+_escExpA(val)+'" oninput="meta2vChange(this)" />';
 }
 
 function _meta2vFieldCell(c,p,vi,k,val,isTA,taRows){
   var ds='data-c="'+_escExpA(c)+'" data-p="'+p+'" data-vi="'+vi+'" data-k="'+k+'"';
   if(isTA){
     var r=taRows||3;
-    return '<textarea class="meta2-ta" rows="'+r+'" '+ds+' onchange="meta2vChange(this)" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'">'+_escExpA(val)+'</textarea>';
+    return '<textarea class="meta2-ta" rows="'+r+'" '+ds+' oninput="meta2vChange(this);this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'">'+_escExpA(val)+'</textarea>';
   }
-  return '<input class="exp-cell" style="width:100%;min-width:110px" '+ds+' value="'+_escExpA(val)+'" onchange="meta2vChange(this)" />';
+  return '<input class="exp-cell" style="width:100%;min-width:110px" '+ds+' value="'+_escExpA(val)+'" oninput="meta2vChange(this)" />';
 }
 
 function meta2vSection(country,platform,rows){
   var versions=meta2vLoad(country,platform);
   var src=(platform==='ios'&&_meta2Src[country])?_meta2Src[country]:{};
+
+  /* Auto-create v1 pre-populated from _meta2Src so there is always content */
+  if(!versions.length){
+    var initV={vNum:1,newVer:'',subDate:'',liveDate:''};
+    rows.forEach(function(r){
+      initV[r.f+'_prev']=src[r.pk]||'';
+      initV[r.f+'_opt'] =src[r.ok]||'';
+    });
+    versions.push(initV);
+    meta2vSave(country,platform,versions);
+  }
+
   var cAttr='data-c="'+_escExpA(country)+'" data-p="'+platform+'"';
   var html='<div style="margin-bottom:12px"><button class="meta2v-add-btn" '+cAttr+' onclick="meta2vAdd(this)">+ Add New Version</button></div>';
-
-  if(!versions.length){
-    return html+'<div class="meta2v-empty">No versions yet. Click "+ Add New Version" to begin tracking metadata history.</div>';
-  }
 
   versions.slice().reverse().forEach(function(v,dispIdx){
     var vi=v.vNum-1;
