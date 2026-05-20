@@ -2142,6 +2142,7 @@ function setMetaLocale(code){
 }
 
 function _meta2LocaleTabBar(){
+  if(!_META2_LOCALES) return '';
   var html = '<div class="meta2-locale-tabs">';
   var seenSep = false;
   for(var i=0;i<_META2_LOCALES.length;i++){
@@ -2156,6 +2157,12 @@ function _meta2LocaleTabBar(){
   html += '</div>';
   return html;
 }
+
+// If metadata tab was restored during init (before _META2_LOCALES was assigned), re-render now
+(function(){
+  var btn = document.getElementById('tabn-metadata');
+  if(btn && btn.classList.contains('active')) renderMetadata();
+})();
 
 /* ── Metadata version history ─────────────────────────────────── */
 
@@ -2223,7 +2230,7 @@ function _meta2vFieldCell(c,p,vi,k,val,isTA,taRows){
 function meta2vSection(country,platform,rows){
   var versions=meta2vLoad(country,platform);
   var locDef=null;
-  for(var _li=0;_li<_META2_LOCALES.length;_li++){if(_META2_LOCALES[_li].code===_meta2ActiveLocale){locDef=_META2_LOCALES[_li];break;}}
+  for(var _li=0;_li<(_META2_LOCALES||[]).length;_li++){if(_META2_LOCALES[_li].code===_meta2ActiveLocale){locDef=_META2_LOCALES[_li];break;}}
   var _srcKey=locDef&&locDef.defaultFrom?locDef.defaultFrom:null;
   var src=(platform==='ios'&&_srcKey&&_meta2Src[_srcKey])?_meta2Src[_srcKey]:{};
 
