@@ -1632,7 +1632,8 @@ function renderSequential() {
   var seqData = _getStoreData(seqAdsMode);
   var daily = getDailyTotals(seqData, territory, source, rangeStart, rangeEnd);
   var dates = Object.keys(daily).sort();
-  dates.forEach(function(d){ daily[d].cvr = daily[d].imp > 0 ? daily[d].total/daily[d].imp*100 : 0; });
+  var _seqKey = seqDlMetric==='ftd' ? 'ftd' : seqDlMetric==='rdl' ? 'rdl' : 'total';
+  dates.forEach(function(d){ daily[d].cvr = daily[d].imp > 0 ? daily[d][_seqKey]/daily[d].imp*100 : 0; });
 
   if (!dates.length) {
     chartEl.innerHTML = '<div class="empty"><h3>No data found for the selected date range.</h3></div>';
@@ -1735,15 +1736,15 @@ function seqRenderTable(el, dates, daily, baseStart, baseEnd, infStart, infEnd) 
   var dlKey   = seqDlMetric==='ftd' ? 'ftd' : seqDlMetric==='rdl' ? 'rdl' : 'total';
   var dlLabel = seqDlMetric==='ftd' ? 'First Time Downloads' : seqDlMetric==='rdl' ? 'Redownloads' : 'Total Downloads';
 
-  var base={imp:0,dl:0,cvrSum:0,days:0}, inf={imp:0,dl:0,cvrSum:0,days:0};
+  var base={imp:0,dl:0,days:0}, inf={imp:0,dl:0,days:0};
   dates.forEach(function(d){
     var r=daily[d];
-    if (d>=baseStart && d<=baseEnd){ base.imp+=r.imp; base.dl+=r[dlKey]; base.cvrSum+=r.cvr; base.days++; }
-    if (d>=infStart  && d<=infEnd ){ inf.imp +=r.imp; inf.dl +=r[dlKey]; inf.cvrSum +=r.cvr; inf.days++;  }
+    if (d>=baseStart && d<=baseEnd){ base.imp+=r.imp; base.dl+=r[dlKey]; base.days++; }
+    if (d>=infStart  && d<=infEnd ){ inf.imp +=r.imp; inf.dl +=r[dlKey]; inf.days++;  }
   });
 
-  var bCVR = base.days ? base.cvrSum/base.days : 0;
-  var iCVR = inf.days  ? inf.cvrSum /inf.days  : 0;
+  var bCVR = base.imp > 0 ? base.dl / base.imp * 100 : 0;
+  var iCVR = inf.imp  > 0 ? inf.dl  / inf.imp  * 100 : 0;
 
   function pctChange(b,v){ return b ? (v-b)/b*100 : null; }
   function pctCell(p) {
